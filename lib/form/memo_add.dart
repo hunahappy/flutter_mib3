@@ -20,14 +20,10 @@ class _MmemoAddState extends State<MmemoAdd> {
   final textContent1 = TextEditingController();
   final textContent2 = TextEditingController();
 
-  final db = AppDatabase();
-  late final Mib3Controller controller;
-
+  final controller = Get.find<Mib3Controller>();
 
   @override
   void initState() {
-    controller = Get.put(Mib3Controller(db));
-
     textContent1.text = controller.temp_data['content1'];
     textContent2.text = controller.temp_data['content2'];
 

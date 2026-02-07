@@ -18,7 +18,7 @@ class Mmemo extends StatefulWidget {
 }
 
 class _MmemoState extends State<Mmemo> {
-  final db = AppDatabase();
+  final controller = Get.find<Mib3Controller>();
   String _title = "memo";
   String _jong_flag = '1';
   var _wan_flag = '진행';
@@ -26,14 +26,6 @@ class _MmemoState extends State<Mmemo> {
   final textSearch = TextEditingController();
   final ScrollController _controller = ScrollController();
   int cnt_scroll = 0;
-
-  late final Mib3Controller controller;
-
-  @override
-  void initState() {
-    controller = Get.put(Mib3Controller(db));
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {

@@ -18,7 +18,7 @@ class Mhal extends StatefulWidget {
 }
 
 class _MhalState extends State<Mhal> {
-  final db = AppDatabase();
+  final controller = Get.find<Mib3Controller>();
   late List<Map<String, dynamic>> rows;
   String _title =
       "to do ${DateFormat('MM-dd').format(DateTime.now())} ${DateFormat.E().format(DateTime.now())}";
@@ -26,13 +26,6 @@ class _MhalState extends State<Mhal> {
   bool _sort_flag = true;
 
   final ScrollController _controller = ScrollController();
-  late final Mib3Controller controller;
-
-  @override
-  void initState() {
-    controller = Get.put(Mib3Controller(db));
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {

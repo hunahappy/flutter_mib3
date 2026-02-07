@@ -17,20 +17,13 @@ class Mprogress extends StatefulWidget {
 }
 
 class _MprogressState extends State<Mprogress> {
-  final db = AppDatabase();
+  final controller = Get.find<Mib3Controller>();
   late List<Map<String, dynamic>> rows;
   String _title = "progress";
   String _wan_flag = "진행";
   bool _sort_flag = true;
 
   final ScrollController _controller = ScrollController();
-  late final Mib3Controller controller;
-
-  @override
-  void initState() {
-    controller = Get.put(Mib3Controller(db));
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {

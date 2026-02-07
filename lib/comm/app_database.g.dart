@@ -301,6 +301,313 @@ class Mib3Companion extends UpdateCompanion<Mib3Data> {
   }
 }
 
+class $Mib3SubTable extends Mib3Sub with TableInfo<$Mib3SubTable, Mib3SubData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $Mib3SubTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _masterIdMeta = const VerificationMeta(
+    'masterId',
+  );
+  @override
+  late final GeneratedColumn<String> masterId = GeneratedColumn<String>(
+    'master_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sdateMeta = const VerificationMeta('sdate');
+  @override
+  late final GeneratedColumn<String> sdate = GeneratedColumn<String>(
+    'sdate',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, masterId, sdate, content];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mib3_sub';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Mib3SubData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('master_id')) {
+      context.handle(
+        _masterIdMeta,
+        masterId.isAcceptableOrUnknown(data['master_id']!, _masterIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_masterIdMeta);
+    }
+    if (data.containsKey('sdate')) {
+      context.handle(
+        _sdateMeta,
+        sdate.isAcceptableOrUnknown(data['sdate']!, _sdateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sdateMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Mib3SubData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Mib3SubData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      masterId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}master_id'],
+      )!,
+      sdate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sdate'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+    );
+  }
+
+  @override
+  $Mib3SubTable createAlias(String alias) {
+    return $Mib3SubTable(attachedDatabase, alias);
+  }
+}
+
+class Mib3SubData extends DataClass implements Insertable<Mib3SubData> {
+  final String id;
+  final String masterId;
+  final String sdate;
+  final String content;
+  const Mib3SubData({
+    required this.id,
+    required this.masterId,
+    required this.sdate,
+    required this.content,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['master_id'] = Variable<String>(masterId);
+    map['sdate'] = Variable<String>(sdate);
+    map['content'] = Variable<String>(content);
+    return map;
+  }
+
+  Mib3SubCompanion toCompanion(bool nullToAbsent) {
+    return Mib3SubCompanion(
+      id: Value(id),
+      masterId: Value(masterId),
+      sdate: Value(sdate),
+      content: Value(content),
+    );
+  }
+
+  factory Mib3SubData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Mib3SubData(
+      id: serializer.fromJson<String>(json['id']),
+      masterId: serializer.fromJson<String>(json['masterId']),
+      sdate: serializer.fromJson<String>(json['sdate']),
+      content: serializer.fromJson<String>(json['content']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'masterId': serializer.toJson<String>(masterId),
+      'sdate': serializer.toJson<String>(sdate),
+      'content': serializer.toJson<String>(content),
+    };
+  }
+
+  Mib3SubData copyWith({
+    String? id,
+    String? masterId,
+    String? sdate,
+    String? content,
+  }) => Mib3SubData(
+    id: id ?? this.id,
+    masterId: masterId ?? this.masterId,
+    sdate: sdate ?? this.sdate,
+    content: content ?? this.content,
+  );
+  Mib3SubData copyWithCompanion(Mib3SubCompanion data) {
+    return Mib3SubData(
+      id: data.id.present ? data.id.value : this.id,
+      masterId: data.masterId.present ? data.masterId.value : this.masterId,
+      sdate: data.sdate.present ? data.sdate.value : this.sdate,
+      content: data.content.present ? data.content.value : this.content,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Mib3SubData(')
+          ..write('id: $id, ')
+          ..write('masterId: $masterId, ')
+          ..write('sdate: $sdate, ')
+          ..write('content: $content')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, masterId, sdate, content);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Mib3SubData &&
+          other.id == this.id &&
+          other.masterId == this.masterId &&
+          other.sdate == this.sdate &&
+          other.content == this.content);
+}
+
+class Mib3SubCompanion extends UpdateCompanion<Mib3SubData> {
+  final Value<String> id;
+  final Value<String> masterId;
+  final Value<String> sdate;
+  final Value<String> content;
+  final Value<int> rowid;
+  const Mib3SubCompanion({
+    this.id = const Value.absent(),
+    this.masterId = const Value.absent(),
+    this.sdate = const Value.absent(),
+    this.content = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  Mib3SubCompanion.insert({
+    required String id,
+    required String masterId,
+    required String sdate,
+    required String content,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       masterId = Value(masterId),
+       sdate = Value(sdate),
+       content = Value(content);
+  static Insertable<Mib3SubData> custom({
+    Expression<String>? id,
+    Expression<String>? masterId,
+    Expression<String>? sdate,
+    Expression<String>? content,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (masterId != null) 'master_id': masterId,
+      if (sdate != null) 'sdate': sdate,
+      if (content != null) 'content': content,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  Mib3SubCompanion copyWith({
+    Value<String>? id,
+    Value<String>? masterId,
+    Value<String>? sdate,
+    Value<String>? content,
+    Value<int>? rowid,
+  }) {
+    return Mib3SubCompanion(
+      id: id ?? this.id,
+      masterId: masterId ?? this.masterId,
+      sdate: sdate ?? this.sdate,
+      content: content ?? this.content,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (masterId.present) {
+      map['master_id'] = Variable<String>(masterId.value);
+    }
+    if (sdate.present) {
+      map['sdate'] = Variable<String>(sdate.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Mib3SubCompanion(')
+          ..write('id: $id, ')
+          ..write('masterId: $masterId, ')
+          ..write('sdate: $sdate, ')
+          ..write('content: $content, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SettingTable extends Setting with TableInfo<$SettingTable, SettingData> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -511,12 +818,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $Mib3Table mib3 = $Mib3Table(this);
+  late final $Mib3SubTable mib3Sub = $Mib3SubTable(this);
   late final $SettingTable setting = $SettingTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [mib3, setting];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [mib3, mib3Sub, setting];
 }
 
 typedef $$Mib3TableCreateCompanionBuilder =
@@ -692,6 +1000,184 @@ typedef $$Mib3TableProcessedTableManager =
       Mib3Data,
       PrefetchHooks Function()
     >;
+typedef $$Mib3SubTableCreateCompanionBuilder =
+    Mib3SubCompanion Function({
+      required String id,
+      required String masterId,
+      required String sdate,
+      required String content,
+      Value<int> rowid,
+    });
+typedef $$Mib3SubTableUpdateCompanionBuilder =
+    Mib3SubCompanion Function({
+      Value<String> id,
+      Value<String> masterId,
+      Value<String> sdate,
+      Value<String> content,
+      Value<int> rowid,
+    });
+
+class $$Mib3SubTableFilterComposer
+    extends Composer<_$AppDatabase, $Mib3SubTable> {
+  $$Mib3SubTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get masterId => $composableBuilder(
+    column: $table.masterId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sdate => $composableBuilder(
+    column: $table.sdate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$Mib3SubTableOrderingComposer
+    extends Composer<_$AppDatabase, $Mib3SubTable> {
+  $$Mib3SubTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get masterId => $composableBuilder(
+    column: $table.masterId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sdate => $composableBuilder(
+    column: $table.sdate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$Mib3SubTableAnnotationComposer
+    extends Composer<_$AppDatabase, $Mib3SubTable> {
+  $$Mib3SubTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get masterId =>
+      $composableBuilder(column: $table.masterId, builder: (column) => column);
+
+  GeneratedColumn<String> get sdate =>
+      $composableBuilder(column: $table.sdate, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+}
+
+class $$Mib3SubTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $Mib3SubTable,
+          Mib3SubData,
+          $$Mib3SubTableFilterComposer,
+          $$Mib3SubTableOrderingComposer,
+          $$Mib3SubTableAnnotationComposer,
+          $$Mib3SubTableCreateCompanionBuilder,
+          $$Mib3SubTableUpdateCompanionBuilder,
+          (
+            Mib3SubData,
+            BaseReferences<_$AppDatabase, $Mib3SubTable, Mib3SubData>,
+          ),
+          Mib3SubData,
+          PrefetchHooks Function()
+        > {
+  $$Mib3SubTableTableManager(_$AppDatabase db, $Mib3SubTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$Mib3SubTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$Mib3SubTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$Mib3SubTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> masterId = const Value.absent(),
+                Value<String> sdate = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => Mib3SubCompanion(
+                id: id,
+                masterId: masterId,
+                sdate: sdate,
+                content: content,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String masterId,
+                required String sdate,
+                required String content,
+                Value<int> rowid = const Value.absent(),
+              }) => Mib3SubCompanion.insert(
+                id: id,
+                masterId: masterId,
+                sdate: sdate,
+                content: content,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$Mib3SubTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $Mib3SubTable,
+      Mib3SubData,
+      $$Mib3SubTableFilterComposer,
+      $$Mib3SubTableOrderingComposer,
+      $$Mib3SubTableAnnotationComposer,
+      $$Mib3SubTableCreateCompanionBuilder,
+      $$Mib3SubTableUpdateCompanionBuilder,
+      (Mib3SubData, BaseReferences<_$AppDatabase, $Mib3SubTable, Mib3SubData>),
+      Mib3SubData,
+      PrefetchHooks Function()
+    >;
 typedef $$SettingTableCreateCompanionBuilder =
     SettingCompanion Function({
       required String id,
@@ -833,6 +1319,8 @@ class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
   $$Mib3TableTableManager get mib3 => $$Mib3TableTableManager(_db, _db.mib3);
+  $$Mib3SubTableTableManager get mib3Sub =>
+      $$Mib3SubTableTableManager(_db, _db.mib3Sub);
   $$SettingTableTableManager get setting =>
       $$SettingTableTableManager(_db, _db.setting);
 }

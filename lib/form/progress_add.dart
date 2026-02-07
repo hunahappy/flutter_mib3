@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:mib3/form/progress_sub_add.dart';
 
 import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
@@ -21,15 +22,12 @@ class _MprogressAddState extends State<MprogressAdd> {
   final textContent1 = TextEditingController();
   final textContent2 = TextEditingController();
 
-  final db = AppDatabase();
+  final controller = Get.find<Mib3Controller>();
 
   final ScrollController _controller = ScrollController();
-  late final Mib3Controller controller;
 
   @override
   void initState() {
-    controller = Get.put(Mib3Controller(db));
-
     textContent1.text = controller.temp_data['content1'];
     textContent2.text = controller.temp_data['content2'];
 
@@ -93,6 +91,26 @@ class _MprogressAddState extends State<MprogressAdd> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: () async {
+                          controller.sub_temp_data = <String, dynamic>{
+                            "id": "new",
+                            "sdate": DateFormat(
+                              'yyyy-MM-dd',
+                            ).format(DateTime.now()),
+                            "content1": "",
+                            "content2": "",
+                          };
+                          await showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return const MprogressSubAdd();
+                            },
+                          );
+                        },
+                      ),
+                      const Spacer(),
                       IconButton(
                         icon: const Icon(Icons.content_paste_off),
                         onPressed: () async {
@@ -206,71 +224,93 @@ class _MprogressAddState extends State<MprogressAdd> {
                       ),
                     ],
                   ),
-                  // Expanded(
-                  //   child: Obx(() {
-                  //     var filtered = controller.items
-                  //         .where((item) => jsonDecode(item.content)['master_id'] == controller.temp_data["id"])
-                  //         .toList();
-                  //
-                  //       filtered.sort(
-                  //             (a, b) => jsonDecode(a.content,)['content1'].compareTo(jsonDecode(b.content)['content1']),
-                  //       );
-                  //
-                  //     return ListView.builder(
-                  //       controller: _controller,
-                  //       padding: const EdgeInsets.all(10),
-                  //       itemCount: filtered.length,
-                  //       itemBuilder: (_, index) {
-                  //         final item = filtered[index];
-                  //         return Card(
-                  //           elevation: 7,
-                  //           child: ListTile(
-                  //             dense: true,
-                  //             title: Transform.translate(
-                  //               offset: const Offset(0, 0),
-                  //               child: Text(jsonDecode(item.content)["content1"],
-                  //                 maxLines: controller.setting_line_size,
-                  //                 overflow: TextOverflow.fade,
-                  //                 style:
-                  //                 TextStyle(fontSize: controller.setting_font_size + 0.0),
-                  //               ),
-                  //             ),
-                  //             trailing: Text(
-                  //               "일 지남",
-                  //               style: const TextStyle(
-                  //                   fontSize: 10, color: Colors.blueAccent),
-                  //             ),
-                  //
-                  //             onTap: () async {
-                  //               controller.temp_data = <String, dynamic>{
-                  //                 "id": item.id,
-                  //                 "wan": item.wan,
-                  //                 "content1": jsonDecode(item.content)['content1'],
-                  //                 "content2": jsonDecode(item.content)['content2'],
-                  //               };
-                  //               await showDialog(
-                  //                 context: context,
-                  //                 builder: (BuildContext context) {
-                  //                   return const MprogressAdd();
-                  //                 },
-                  //               );
-                  //             },
-                  //             onLongPress: () async {
-                  //               final s_data = <String, dynamic>{
-                  //                 "view_font_size": controller.setting_view_font_size
-                  //                     .toInt(),
-                  //                 "content1": jsonDecode(item.content)['content1'],
-                  //               };
-                  //
-                  //               await Get.toNamed('/r/memo_view', arguments: s_data);
-                  //               setState(() {});
-                  //             },
-                  //           ),
-                  //         );
-                  //       },
-                  //     );
-                  //   }),
-                  // ),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.height - 400,
+                    child: Obx(() {
+                      var filtered = controller.subs
+                          .where(
+                            (item) =>
+                                item.masterId.toString() == controller.temp_data["id"].toString(),
+                          )
+                          .toList();
+
+                      filtered.sort(
+                        (a, b) => jsonDecode(a.content)['content1'].compareTo(
+                          jsonDecode(b.content)['content1'],
+                        ),
+                      );
+
+                      return ListView.builder(
+                        controller: _controller,
+                        padding: const EdgeInsets.all(10),
+                        itemCount: filtered.length,
+                        itemBuilder: (_, index) {
+                          final item = filtered[index];
+                          return Card(
+                            elevation: 7,
+                            child: ListTile(
+                              dense: true,
+                              title: Transform.translate(
+                                offset: const Offset(0, 0),
+                                child: Text(
+                                  jsonDecode(item.content)["content1"],
+                                  maxLines: controller.setting_line_size,
+                                  overflow: TextOverflow.fade,
+                                  style: TextStyle(
+                                    fontSize:
+                                        controller.setting_font_size + 0.0,
+                                  ),
+                                ),
+                              ),
+                              trailing: Text(
+                                "일 지남",
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.blueAccent,
+                                ),
+                              ),
+
+                              onTap: () async {
+                                controller.temp_data = <String, dynamic>{
+                                  "id": item.id,
+                                  "masterid": item.masterId,
+                                  "content1": jsonDecode(
+                                    item.content,
+                                  )['content1'],
+                                  "content2": jsonDecode(
+                                    item.content,
+                                  )['content2'],
+                                };
+                                await showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return const MprogressAdd();
+                                  },
+                                );
+                              },
+                              onLongPress: () async {
+                                final s_data = <String, dynamic>{
+                                  "view_font_size": controller
+                                      .setting_view_font_size
+                                      .toInt(),
+                                  "content1": jsonDecode(
+                                    item.content,
+                                  )['content1'],
+                                };
+
+                                await Get.toNamed(
+                                  '/r/memo_view',
+                                  arguments: s_data,
+                                );
+                                setState(() {});
+                              },
+                            ),
+                          );
+                        },
+                      );
+                    }),
+                  ),
                 ],
               ),
             ),

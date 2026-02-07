@@ -13,7 +13,6 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:flutter/material.dart';
 
-import 'package:mib3/comm/db_helper.dart';
 import 'package:mib3/form/memo_add.dart';
 
 import 'form/hal_add.dart';
@@ -23,9 +22,6 @@ import 'form/memo_view.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('ko_KR', null);
-
-  final dbHelper = DBHelper();
-  final db = await dbHelper.database;
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -37,27 +33,9 @@ void main() async {
     await FirebaseAuth.instance.signOut();
   }
 
+  final db = AppDatabase();
+  Get.put(Mib3Controller(db));
   //////////////////////////////////////////////////////////////////////////////
-  final dba = AppDatabase();
-  final controller = Get.put(Mib3Controller(dba));
-  List<Map<String, dynamic>> rows = await db.rawQuery('select * from setting');
-
-  for (var s in rows) {
-    switch (s['id']) {
-      case 'font':
-        controller.setting_font = s['content'].toString();
-        break;
-      case 'font_size':
-        controller.setting_font_size = int.tryParse(s['content'].toString()) ?? 0;
-        break;
-      case 'view_font_size':
-        controller.setting_view_font_size = int.tryParse(s['content'].toString()) ?? 0;
-        break;
-      case 'line_size':
-        controller.setting_line_size = int.tryParse(s['content'].toString()) ?? 0;
-        break;
-    }
-  }
 
   runApp(const MyApp());
 }

@@ -10,6 +10,16 @@ class Mib3 extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class Mib3Sub extends Table {
+  TextColumn get id => text()();
+  TextColumn get masterId => text()();
+  TextColumn get sdate => text()();
+  TextColumn get content => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class Setting extends Table {
   TextColumn get id => text()();       // primary key
   TextColumn get content => text()();  // 값
