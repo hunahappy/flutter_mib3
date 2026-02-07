@@ -1,0 +1,51 @@
+
+name: mib3
+description: "A new Flutter project."
+publish_to: 'none' 
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.10.7 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  firebase_core:
+  firebase_auth:
+  cloud_firestore:
+  google_sign_in: ^6.3.0
+  sqflite:
+  get:
+  path:
+  drift:
+  drift_flutter:
+  sqlite3_flutter_libs:
+  path_provider:
+  uuid:
+  flutter_styled_toast:
+  intl:
+  table_calendar:
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons:
+  drift_dev:
+  build_runner:
+
+flutter:
+  uses-material-design: true
+  assets:
+    - symbols/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icon/app_icon.png

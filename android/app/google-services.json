@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "693527971975",
+    "project_id": "mib3-60b63",
+    "storage_bucket": "mib3-60b63.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:693527971975:android:22dd7092873c9557e75022",
+        "android_client_info": {
+          "package_name": "com.mandu.mib3"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "693527971975-45hntj4pq6jt7qncivm50826mb36dmcu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mandu.mib3",
+            "certificate_hash": "ca49f71cf2eb80920ced06c9c91e4a9b9882095a"
+          }
+        },
+        {
+          "client_id": "693527971975-n5pv8ilcajdcu816qkgpe0ihrrgun1e7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCd7qcVcfQEWkhyiNUV8noceREwWQvkgi4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "693527971975-n5pv8ilcajdcu816qkgpe0ihrrgun1e7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "693527971975-to1pkv2dlfvbtb1buqtcjg9rs7j685r0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mandu.mib3"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
