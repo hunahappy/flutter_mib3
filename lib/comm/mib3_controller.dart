@@ -1,12 +1,16 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-import 'app_database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 
-/// 오프라인 큐 상태
+import 'app_database.dart';
+
+/// =====================
+/// Offline Sync
+/// =====================
 enum SyncAction { add, update, delete }
 
 class SyncQueueItem {
@@ -23,24 +27,28 @@ class SyncQueueItem {
   });
 }
 
+/// =====================
+/// Controller
+/// =====================
 class Mib3Controller extends GetxController {
+  // =====================
+  // DB / Firebase
+  // =====================
+  final AppDatabase db;
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  String? uid; // ❗ nullable
+
   // =====================
   // Setting
   // =====================
-  var setting_font = '';
+  String setting_font = '';
   int setting_font_size = 1;
   int setting_view_font_size = 1;
   int setting_line_size = 1;
 
   var temp_data = <String, dynamic>{'id': 'new'};
   var sub_temp_data = <String, dynamic>{'id': 'new'};
-
-  // =====================
-  // DB / Firebase
-  // =====================
-  final AppDatabase db;
-  final firestore = FirebaseFirestore.instance;
-
   // =====================
   // Observable
   // =====================
@@ -48,7 +56,6 @@ class Mib3Controller extends GetxController {
   final items_jin = <MibWithLastSubDate>[].obs;
   final subs = <Mib3SubData>[].obs;
 
-  // Offline Queue
   final _syncQueue = <SyncQueueItem>[];
 
   Mib3Controller(this.db);
@@ -61,8 +68,19 @@ class Mib3Controller extends GetxController {
     super.onInit();
     _loadSettings();
     _watchLocal();
-    _syncMib3FromFirebase();
-    _syncMib3SubFromFirebase();
+
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user == null) {
+        uid = null;
+        print('🔓 로그아웃 상태');
+      } else {
+        uid = user.uid;
+        print('🔐 로그인됨: $uid');
+
+        _syncMib3FromFirebase();
+        _syncMib3SubFromFirebase();
+      }
+    });
   }
 
   // =====================
@@ -88,6 +106,26 @@ class Mib3Controller extends GetxController {
     }
   }
 
+  Future<void> updateSetting(String id, String value) async {
+    await db.setSetting(id, value);
+
+    switch (id) {
+      case 'font':
+        setting_font = value;
+        break;
+      case 'font_size':
+        setting_font_size = int.tryParse(value) ?? setting_font_size;
+        break;
+      case 'view_font_size':
+        setting_view_font_size = int.tryParse(value) ?? setting_view_font_size;
+        break;
+      case 'line_size':
+        setting_line_size = int.tryParse(value) ?? setting_line_size;
+        break;
+    }
+    update();
+  }
+
   // =====================
   // Local Watch
   // =====================
@@ -98,10 +136,17 @@ class Mib3Controller extends GetxController {
   }
 
   // =====================
-  // Firebase → Local (mib3)
+  // Firebase → Local
   // =====================
   void _syncMib3FromFirebase() {
-    firestore.collection('mib3').snapshots().listen((snap) async {
+    if (uid == null) return;
+
+    firestore
+        .collection('users')
+        .doc(uid)
+        .collection('mib3')
+        .snapshots()
+        .listen((snap) async {
       for (final c in snap.docChanges) {
         final d = c.doc.data();
         if (d == null) continue;
@@ -122,11 +167,15 @@ class Mib3Controller extends GetxController {
     });
   }
 
-  // =====================
-  // Firebase → Local (mib3_sub)
-  // =====================
   void _syncMib3SubFromFirebase() {
-    firestore.collection('mib3_sub').snapshots().listen((snap) async {
+    if (uid == null) return;
+
+    firestore
+        .collection('users')
+        .doc(uid)
+        .collection('mib3_sub')
+        .snapshots()
+        .listen((snap) async {
       for (final c in snap.docChanges) {
         final d = c.doc.data();
         if (d == null) continue;
@@ -148,139 +197,207 @@ class Mib3Controller extends GetxController {
   }
 
   // =====================
-  // mib3 CRUD
+  // mib3 CRUD ⭐ FIXED
   // =====================
   Future<void> addItem(String tb, String wan, String content) async {
+    if (uid == null) {
+      print('❌ addItem 실패: 로그인 안됨');
+      return;
+    }
+
     final id = const Uuid().v4();
 
-    await db.insertRow(Mib3Companion.insert(
-      id: id,
-      tb: tb,
-      wan: wan,
-      content: content,
-    ));
+    // 1️⃣ 로컬 DB
+    await db.insertRow(
+      Mib3Companion.insert(
+        id: id,
+        tb: tb,
+        wan: wan,
+        content: content,
+      ),
+    );
 
+    // 2️⃣ Firebase
     try {
-      await firestore.collection('mib3').doc(id).set({
+      await firestore
+          .collection('users')
+          .doc(uid)
+          .collection('mib3')
+          .doc(id)
+          .set({
         'tb': tb,
         'wan': wan,
         'content': content,
       });
-    } catch (_) {
-      _syncQueue.add(SyncQueueItem(
-        id: id,
-        collection: 'mib3',
-        action: SyncAction.add,
-        data: {'tb': tb, 'wan': wan, 'content': content},
-      ));
+    } catch (e) {
+      _syncQueue.add(
+        SyncQueueItem(
+          id: id,
+          collection: 'mib3',
+          action: SyncAction.add,
+          data: {
+            'tb': tb,
+            'wan': wan,
+            'content': content,
+          },
+        ),
+      );
     }
   }
 
-  Future<void> updateItem(String id, String tb, String wan, String content) async {
-    await db.insertRow(Mib3Companion(
-      id: drift.Value(id),
-      tb: drift.Value(tb),
-      wan: drift.Value(wan),
-      content: drift.Value(content),
-    ));
+  Future<void> updateItem(
+      String id,
+      String tb,
+      String wan,
+      String content,
+      ) async {
+    if (uid == null) {
+      print('❌ updateItem 실패: 로그인 안됨');
+      return;
+    }
 
+    // 1️⃣ 로컬 DB 업데이트
+    await db.insertRow(
+      Mib3Companion(
+        id: drift.Value(id),
+        tb: drift.Value(tb),
+        wan: drift.Value(wan),
+        content: drift.Value(content),
+      ),
+    );
+
+    // 2️⃣ Firebase 업데이트
     try {
-      await firestore.collection('mib3').doc(id).set({
+      await firestore
+          .collection('users')
+          .doc(uid)
+          .collection('mib3')
+          .doc(id)
+          .update({
         'tb': tb,
         'wan': wan,
         'content': content,
       });
     } catch (_) {
-      _syncQueue.add(SyncQueueItem(
-        id: id,
-        collection: 'mib3',
-        action: SyncAction.update,
-        data: {'tb': tb, 'wan': wan, 'content': content},
-      ));
+      // 3️⃣ 실패 시 오프라인 큐
+      _syncQueue.add(
+        SyncQueueItem(
+          id: id,
+          collection: 'mib3',
+          action: SyncAction.update,
+          data: {
+            'tb': tb,
+            'wan': wan,
+            'content': content,
+          },
+        ),
+      );
     }
   }
 
   Future<void> removeItem(String id) async {
+    if (uid == null) return;
+
+    // 1️⃣ 로컬 DB 삭제
     await db.deleteRow(id);
     await db.deleteSubsByMaster(id);
 
+    // 2️⃣ Firebase 삭제
     try {
-      await firestore.collection('mib3').doc(id).delete();
+      await firestore
+          .collection('users')
+          .doc(uid)
+          .collection('mib3')
+          .doc(id)
+          .delete();
+
+      // 하위 sub 삭제
       final qs = await firestore
+          .collection('users')
+          .doc(uid)
           .collection('mib3_sub')
           .where('masterId', isEqualTo: id)
           .get();
+
       for (final d in qs.docs) {
         await d.reference.delete();
       }
     } catch (_) {
-      _syncQueue.add(SyncQueueItem(
-        id: id,
-        collection: 'mib3',
-        action: SyncAction.delete,
-      ));
+      _syncQueue.add(
+        SyncQueueItem(
+          id: id,
+          collection: 'mib3',
+          action: SyncAction.delete,
+        ),
+      );
     }
   }
 
+
   // =====================
-  // mib3_sub CRUD ⭐⭐⭐
+  // mib3_sub CRUD
   // =====================
   Future<void> addSub(String masterId, String sdate, String content) async {
+    if (uid == null) return;
+
     final id = const Uuid().v4();
 
-    await db.insertSub(Mib3SubCompanion.insert(
-      id: id,
-      masterId: masterId,
-      sdate: sdate,
-      content: content,
-    ));
-
-    try {
-      await firestore.collection('mib3_sub').doc(id).set({
-        'masterId': masterId,
-        'sdate': sdate,
-        'content': content,
-      });
-    } catch (_) {
-      _syncQueue.add(SyncQueueItem(
+    await db.insertSub(
+      Mib3SubCompanion.insert(
         id: id,
-        collection: 'mib3_sub',
-        action: SyncAction.add,
-        data: {'masterId': masterId, 'sdate': sdate, 'content': content},
-      ));
-    }
+        masterId: masterId,
+        sdate: sdate,
+        content: content,
+      ),
+    );
+
+    await firestore
+        .collection('users')
+        .doc(uid)
+        .collection('mib3_sub')
+        .doc(id)
+        .set({
+      'masterId': masterId,
+      'sdate': sdate,
+      'content': content,
+    });
   }
 
   Future<void> updateSub(
-    String id,
-    String? sdate,
-    String? content,
-  ) async {
-    // 1️⃣ 로컬 Drift DB 업데이트
+      String id,
+        String sdate,
+        String content,
+      ) async {
+    if (uid == null) return;
+
+    // 1️⃣ 로컬 DB
     await db.updateSub(
       id: id,
       sdate: sdate,
       content: content,
     );
 
+    // 2️⃣ Firebase
     try {
-      // 2️⃣ Firebase 업데이트
       final data = <String, dynamic>{};
-
-      if (content != null) data['content'] = content;
       if (sdate != null) data['sdate'] = sdate;
+      if (content != null) data['content'] = content;
 
-      await firestore.collection('mib3_sub').doc(id).update(data);
+      await firestore
+          .collection('users')
+          .doc(uid)
+          .collection('mib3_sub')
+          .doc(id)
+          .update(data);
     } catch (_) {
-      // 3️⃣ 실패 시 오프라인 큐에 저장
       _syncQueue.add(
         SyncQueueItem(
           id: id,
           collection: 'mib3_sub',
           action: SyncAction.update,
           data: {
-            if (content != null) 'content': content,
             if (sdate != null) 'sdate': sdate,
+            if (content != null) 'content': content,
           },
         ),
       );
@@ -288,86 +405,64 @@ class Mib3Controller extends GetxController {
   }
 
   Future<void> removeSub(String id) async {
+    if (uid == null) return;
+
+    // 1️⃣ 로컬 DB
     await db.deleteSub(id);
 
+    // 2️⃣ Firebase
     try {
-      await firestore.collection('mib3_sub').doc(id).delete();
+      await firestore
+          .collection('users')
+          .doc(uid)
+          .collection('mib3_sub')
+          .doc(id)
+          .delete();
     } catch (_) {
-      _syncQueue.add(SyncQueueItem(
-        id: id,
-        collection: 'mib3_sub',
-        action: SyncAction.delete,
-      ));
+      _syncQueue.add(
+        SyncQueueItem(
+          id: id,
+          collection: 'mib3_sub',
+          action: SyncAction.delete,
+        ),
+      );
     }
   }
 
-  Future<void> removeByMasterSub(String id) async {
-    await db.deleteSubsByMaster(id);
+  Future<void> removeByMasterSub(String masterId) async {
+    if (uid == null) return;
 
+    // 1️⃣ 로컬 DB – 해당 master의 sub 전부 삭제
+    await db.deleteSubsByMaster(masterId);
+
+    // 2️⃣ Firebase – 해당 masterId 가진 sub 전부 삭제
     try {
-      await firestore.collection('mib3_sub').doc(id).delete();
+      final qs = await firestore
+          .collection('users')
+          .doc(uid)
+          .collection('mib3_sub')
+          .where('masterId', isEqualTo: masterId)
+          .get();
+
+      for (final doc in qs.docs) {
+        await doc.reference.delete();
+      }
     } catch (_) {
-      _syncQueue.add(SyncQueueItem(
-        id: id,
-        collection: 'mib3_sub',
-        action: SyncAction.delete,
-      ));
+      // 3️⃣ 실패 시 오프라인 큐
+      _syncQueue.add(
+        SyncQueueItem(
+          id: masterId,
+          collection: 'mib3_sub',
+          action: SyncAction.delete,
+        ),
+      );
     }
-  }
-
-
-  Future<void> updateSetting(String id, String value) async {
-    await db.setSetting(id,value);
-
-    // 👉 메모리 값도 같이 갱신 (즉시 UI 반영용)
-    switch (id) {
-      case 'font':
-        setting_font = value;
-        break;
-      case 'font_size':
-        setting_font_size = int.tryParse(value) ?? setting_font_size;
-        break;
-      case 'view_font_size':
-        setting_view_font_size = int.tryParse(value) ?? setting_view_font_size;
-        break;
-      case 'line_size':
-        setting_line_size = int.tryParse(value) ?? setting_line_size;
-        break;
-    }
-
-    update(); // GetX 수동 갱신 (Obx 안 쓰는 위젯용)
-  }
-
-  // =====================
-  // Offline Queue Sync
-  // =====================
-  Future<void> syncFromQueue() async {
-    final success = <SyncQueueItem>[];
-
-    for (final q in _syncQueue) {
-      try {
-        final ref = firestore.collection(q.collection).doc(q.id);
-
-        switch (q.action) {
-          case SyncAction.add:
-          case SyncAction.update:
-            await ref.set(q.data!, SetOptions(merge: true));
-            break;
-          case SyncAction.delete:
-            await ref.delete();
-            break;
-        }
-        success.add(q);
-      } catch (_) {}
-    }
-
-    _syncQueue.removeWhere((e) => success.contains(e));
   }
 }
 
-// =====================
-// Utils
-// =====================
+/// =====================
+/// Utils
+/// =====================
 void show_toast(String msg, context) {
   showToast(msg,
       context: context, position: StyledToastPosition.top);
@@ -382,7 +477,8 @@ int get_date_term2(String pDate) {
   if (pDate.length < 10) return 0;
   return DateTime.parse(pDate)
       .difference(DateTime.now())
-      .inDays * -1;
+      .inDays *
+      -1;
 }
 
 int get_term_day(String date_1, String date_2) {
