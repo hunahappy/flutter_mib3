@@ -1,4 +1,6 @@
 
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -11,7 +13,7 @@ import 'firebase_options.dart';
 import 'package:get/get.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
-
+import 'package:window_size/window_size.dart';
 
 import 'package:flutter/material.dart';
 
@@ -25,6 +27,13 @@ import 'form/memo_view.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('ko_KR', null);
+
+  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+    setWindowTitle('mib3'); // 윈도우 타이틀
+    setWindowMinSize(const Size(800, 600)); // 최소 크기
+    setWindowMaxSize(Size.infinite);       // 최대 크기 제한 없음
+    setWindowFrame(const Rect.fromLTWH(100, 100, 800, 1000)); // 초기 위치와 크기
+  }
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,

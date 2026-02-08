@@ -29,6 +29,7 @@ dependencies:
   flutter_styled_toast:
   intl:
   table_calendar:
+  window_size:
 
   cupertino_icons: ^1.0.8
 
