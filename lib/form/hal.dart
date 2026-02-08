@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
 import '../main.dart';
+import 'cal.dart';
 import 'hal_add.dart';
 
 class Mhal extends StatefulWidget {
@@ -66,13 +67,10 @@ class _MhalState extends State<Mhal> {
           IconButton(
             icon: const Icon(Icons.calendar_month),
             onPressed: () async {
-              final DateTime? picked = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2015),
-                lastDate: DateTime(2101),
-                initialDatePickerMode: DatePickerMode.day,
-              );
+              final picked = await showCalendarDialog(context);
+              if (picked != null) {
+                print('선택한 날짜: $picked');
+              }
             },
           ),
           IconButton(

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
 import '../main.dart';
+import 'cal.dart';
 
 class MprogressSubAdd extends StatefulWidget {
   const MprogressSubAdd({Key? key}) : super(key: key);
@@ -74,13 +75,8 @@ class _MprogressSubAddState extends State<MprogressSubAdd> {
                       IconButton(
                         icon: const Icon(Icons.calendar_month),
                         onPressed: () async {
-                          final DateTime? picked = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime(2015),
-                            lastDate: DateTime(2101),
-                            initialDatePickerMode: DatePickerMode.day,
-                          );
+                          DateTime initial = DateTime(int.parse(textDate.text.substring(0, 4)),int.parse(textDate.text.substring(5, 7)), int.parse(textDate.text.substring(8, 10))); // 원하는 날짜
+                          final picked = await showCalendarDialog(context, initialDate: initial);
                           if (picked != null) {
                             textDate.text = picked.toString().substring(0, 10);
                           }
