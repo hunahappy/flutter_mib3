@@ -71,8 +71,8 @@ class AppDatabase extends _$AppDatabase {
       await batch((b) {
         b.insertAll(setting, [
           SettingCompanion.insert(id: 'font', content: 'OpenSans'),
-          SettingCompanion.insert(id: 'font_size', content: '12'),
-          SettingCompanion.insert(id: 'view_font_size', content: '15'),
+          SettingCompanion.insert(id: 'font_size', content: '14'),
+          SettingCompanion.insert(id: 'view_font_size', content: '16'),
           SettingCompanion.insert(id: 'line_size', content: '10'),
         ]);
       });

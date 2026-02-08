@@ -43,9 +43,9 @@ class Mib3Controller extends GetxController {
   // Setting
   // =====================
   String setting_font = '';
-  int setting_font_size = 1;
-  int setting_view_font_size = 1;
-  int setting_line_size = 1;
+  int setting_font_size = 14;
+  int setting_view_font_size = 18;
+  int setting_line_size = 10;
 
   var temp_data = <String, dynamic>{'id': 'new'};
   var sub_temp_data = <String, dynamic>{'id': 'new'};

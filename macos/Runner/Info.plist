@@ -34,26 +34,6 @@
 
 	<key>CFBundleURLTypes</key>
     <array>
-      <dict>
-        <key>CFBundleURLSchemes</key>
-        <array>
-          <string>com.googleusercontent.apps.693527971975-to1pkv2dlfvbtb1buqtcjg9rs7j685r0</string>
-        </array>
-      </dict>
-    </array>
-
-    <key>CFBundleURLTypes</key>
-    <array>
-      <dict>
-        <key>CFBundleURLSchemes</key>
-        <array>
-          <string>com.googleusercontent.apps.YOUR_CLIENT_ID</string>
-        </array>
-      </dict>
-    </array>
-
-    <key>CFBundleURLTypes</key>
-    <array>
         <dict>
             <key>CFBundleURLSchemes</key>
             <array>
@@ -61,6 +41,9 @@
             </array>
         </dict>
     </array>
+
+    <key>NSKeychainUsageDescription</key>
+    <string>앱에서 로그인 정보를 안전하게 저장하기 위해 Keychain을 사용합니다.</string>
 
 </dict>
 </plist>

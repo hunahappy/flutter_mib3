@@ -136,7 +136,7 @@ class _MhalState extends State<Mhal> {
                         ),
                       ),
                       trailing: Text(
-                        "${get_date_term2(jsonDecode(item.content)["s_date"].toString())}일 남음",
+                        "${get_date_term2(jsonDecode(item.content)["s_date"].toString())*-1}일 남음",
                         style: const TextStyle(
                             fontSize: 10, color: Colors.blueAccent),
                       ),
