@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import 'form/hal.dart';
+import 'form/ilgi.dart';
 import 'form/memo.dart';
 import 'form/progress.dart';
 
@@ -14,7 +15,8 @@ class MibScreen extends StatelessWidget {
       children: const <Widget>[
         Mmemo(),
         Mhal(),
-        Mprogress()
+        Mprogress(),
+        Milgi(),
       ],
     );
   }

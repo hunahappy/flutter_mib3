@@ -171,6 +171,9 @@ class _MprogressAddState extends State<MprogressAdd> {
                                         controller.removeItem(
                                           controller.temp_data["id"],
                                         );
+                                        controller.removeByMasterSub(
+                                          controller.temp_data["id"],
+                                        );
                                         checkClose = true;
                                       } else {
                                         show_toast("no data", context);
@@ -231,15 +234,12 @@ class _MprogressAddState extends State<MprogressAdd> {
                       var filtered = controller.subs
                           .where(
                             (item) =>
-                                item.masterId.toString() == controller.temp_data["id"].toString(),
+                                item.masterId.toString() ==
+                                controller.temp_data["id"].toString(),
                           )
                           .toList();
 
-                      filtered.sort(
-                        (a, b) => jsonDecode(a.content)['content1'].compareTo(
-                          jsonDecode(b.content)['content1'],
-                        ),
-                      );
+                      filtered.sort((a, b) => b.sdate.compareTo(a.sdate));
 
                       return ListView.builder(
                         controller: _controller,
@@ -264,17 +264,23 @@ class _MprogressAddState extends State<MprogressAdd> {
                                 ),
                               ),
                               trailing: Text(
-                                "일 지남",
+                                index < filtered.length - 1
+                                    ? filtered[index].sdate.toString().length > 9
+                                          ? "${filtered[index].sdate.toString().substring(5, 10)} ${get_date_yo(filtered[index].sdate.toString())}\n${get_term_day(filtered[index].sdate, filtered[index + 1].sdate)}${"일 지남"}"
+                                          : ""
+                                    : filtered[index].sdate.toString().length > 9
+                                    ? "${filtered[index].sdate.toString().substring(5, 10)} ${get_date_yo(filtered[index].sdate.toString())}\n최초"
+                                    : "",
                                 style: const TextStyle(
                                   fontSize: 10,
                                   color: Colors.blueAccent,
                                 ),
                               ),
-
                               onTap: () async {
-                                controller.temp_data = <String, dynamic>{
+                                controller.sub_temp_data = <String, dynamic>{
                                   "id": item.id,
                                   "masterid": item.masterId,
+                                  "sdate": item.sdate,
                                   "content1": jsonDecode(
                                     item.content,
                                   )['content1'],
@@ -285,7 +291,7 @@ class _MprogressAddState extends State<MprogressAdd> {
                                 await showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
-                                    return const MprogressAdd();
+                                    return const MprogressSubAdd();
                                   },
                                 );
                               },

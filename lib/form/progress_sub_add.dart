@@ -132,49 +132,6 @@ class _MprogressSubAddState extends State<MprogressSubAdd> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.content_paste_off),
-                        onPressed: () async {
-                          bool checkClose = false;
-                          await showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: const Text('finish?'),
-                                content: const Text("completing it?"),
-                                actions: <Widget>[
-                                  IconButton(
-                                    icon: const Icon(Icons.content_paste_off),
-                                    onPressed: () {
-                                      controller.updateItem(
-                                        controller.sub_temp_data["id"],
-                                        '할일',
-                                        controller.sub_temp_data['wan'] == "진행"
-                                            ? "완료"
-                                            : "진행",
-                                        jsonEncode({
-                                          's_date': textDate.text,
-                                          'content1': textContent1.text,
-                                          'content2': textContent2.text,
-                                          'input_date': DateFormat(
-                                            'yyyy-MM-dd HH:mm:ss',
-                                          ).format(DateTime.now()),
-                                        }),
-                                      );
-                                      checkClose = true;
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                          if (checkClose) {
-                            Navigator.of(context).pop();
-                          }
-                        },
-                      ),
-                      const SizedBox(width: 20),
-                      IconButton(
                         icon: const Icon(Icons.delete),
                         onPressed: () async {
                           bool checkClose = false;
@@ -190,7 +147,7 @@ class _MprogressSubAddState extends State<MprogressSubAdd> {
                                     onPressed: () {
                                       if (controller.sub_temp_data["id"] !=
                                           "new") {
-                                        controller.removeItem(
+                                        controller.removeSub(
                                           controller.sub_temp_data["id"],
                                         );
                                         checkClose = true;
@@ -230,12 +187,10 @@ class _MprogressSubAddState extends State<MprogressSubAdd> {
                             );
                             Navigator.of(context).pop();
                           } else {
-                            await controller.updateItem(
+                            await controller.updateSub(
                               controller.sub_temp_data["id"],
-                              '할일',
-                              controller.sub_temp_data['wan'],
+                              textDate.text,
                               jsonEncode({
-                                's_date': textDate.text,
                                 'content1': textContent1.text,
                                 'content2': textContent2.text,
                                 'input_date': DateFormat(

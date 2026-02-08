@@ -45,6 +45,7 @@ class Mib3Controller extends GetxController {
   // Observable
   // =====================
   final items = <Mib3Data>[].obs;
+  final items_jin = <MibWithLastSubDate>[].obs;
   final subs = <Mib3SubData>[].obs;
 
   // Offline Queue
@@ -60,7 +61,6 @@ class Mib3Controller extends GetxController {
     super.onInit();
     _loadSettings();
     _watchLocal();
-    _watchSubs();
     _syncMib3FromFirebase();
     _syncMib3SubFromFirebase();
   }
@@ -94,10 +94,7 @@ class Mib3Controller extends GetxController {
   void _watchLocal() {
     db.watchAll().listen((rows) => items.value = rows);
     db.watchSubAll().listen((rows) => subs.value = rows);
-  }
-
-  void _watchSubs() {
-    db.watchSubAll().listen((rows) => subs.value = rows);
+    db.watchJinWithLastSubDate().listen((rows) => items_jin.value = rows);
   }
 
   // =====================
@@ -254,16 +251,16 @@ class Mib3Controller extends GetxController {
     }
   }
 
-  Future<void> updateSub({
-    required String id,
-    String? content,
+  Future<void> updateSub(
+    String id,
     String? sdate,
-  }) async {
+    String? content,
+  ) async {
     // 1️⃣ 로컬 Drift DB 업데이트
     await db.updateSub(
       id: id,
-      content: content,
       sdate: sdate,
+      content: content,
     );
 
     try {
@@ -302,6 +299,43 @@ class Mib3Controller extends GetxController {
         action: SyncAction.delete,
       ));
     }
+  }
+
+  Future<void> removeByMasterSub(String id) async {
+    await db.deleteSubsByMaster(id);
+
+    try {
+      await firestore.collection('mib3_sub').doc(id).delete();
+    } catch (_) {
+      _syncQueue.add(SyncQueueItem(
+        id: id,
+        collection: 'mib3_sub',
+        action: SyncAction.delete,
+      ));
+    }
+  }
+
+
+  Future<void> updateSetting(String id, String value) async {
+    await db.setSetting(id,value);
+
+    // 👉 메모리 값도 같이 갱신 (즉시 UI 반영용)
+    switch (id) {
+      case 'font':
+        setting_font = value;
+        break;
+      case 'font_size':
+        setting_font_size = int.tryParse(value) ?? setting_font_size;
+        break;
+      case 'view_font_size':
+        setting_view_font_size = int.tryParse(value) ?? setting_view_font_size;
+        break;
+      case 'line_size':
+        setting_line_size = int.tryParse(value) ?? setting_line_size;
+        break;
+    }
+
+    update(); // GetX 수동 갱신 (Obx 안 쓰는 위젯용)
   }
 
   // =====================
@@ -344,10 +378,16 @@ String get_date_yo(String pDate) {
   return DateFormat.E().format(DateTime.parse(pDate));
 }
 
-String get_date_term2(String pDate) {
-  if (pDate.length < 10) return '';
+int get_date_term2(String pDate) {
+  if (pDate.length < 10) return 0;
   return DateTime.parse(pDate)
       .difference(DateTime.now())
-      .inDays
-      .toString();
+      .inDays * -1;
+}
+
+int get_term_day(String date_1, String date_2) {
+  var date_now = DateTime(int.parse(date_1.substring(0, 4)), int.parse(date_1.substring(5, 7)), int.parse(date_1.substring(8, 10)));
+  var date_last = DateTime(int.parse(date_2.substring(0, 4)), int.parse(date_2.substring(5, 7)), int.parse(date_2.substring(8, 10)));
+
+  return date_now.difference(date_last).inDays;
 }

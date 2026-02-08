@@ -42,5 +42,25 @@
       </dict>
     </array>
 
+    <key>CFBundleURLTypes</key>
+    <array>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>com.googleusercontent.apps.YOUR_CLIENT_ID</string>
+        </array>
+      </dict>
+    </array>
+
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.googleusercontent.apps.693527971975-to1pkv2dlfvbtb1buqtcjg9rs7j685r0</string>
+            </array>
+        </dict>
+    </array>
+
 </dict>
 </plist>

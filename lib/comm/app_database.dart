@@ -95,6 +95,39 @@ class AppDatabase extends _$AppDatabase {
   Future<List<Mib3SubData>> watchSubsAll() => select(mib3Sub).get();
   Stream<List<Mib3SubData>> watchSubAll() => select(mib3Sub).watch();
 
+  Stream<List<MibWithLastSubDate>> watchJinWithLastSubDate() {
+    return (select(mib3)
+      ..where((t) => t.tb.equals('진행')))
+        .watch()
+        .asyncMap((memos) async {
+      final list = <MibWithLastSubDate>[];
+
+      for (final memo in memos) {
+        final lastSub = await (select(mib3Sub)
+          ..where((t) => t.masterId.equals(memo.id))
+          ..orderBy([
+                (t) => OrderingTerm(
+              expression: t.sdate,
+              mode: OrderingMode.desc,
+            )
+          ])
+          ..limit(1))
+            .getSingleOrNull();
+
+        list.add(
+          MibWithLastSubDate(
+            memo: memo,               // mib3의 모든 컬럼
+            lastSubDate: lastSub?.sdate, // 마지막 sub 날짜
+          ),
+        );
+      }
+
+      return list;
+    });
+  }
+
+
+
 
   Future<void> insertSub(Mib3SubCompanion row) {
     return into(mib3Sub).insert(row, mode: InsertMode.insertOrReplace);
@@ -111,8 +144,8 @@ class AppDatabase extends _$AppDatabase {
   /// 🔹 mib3_sub 내용 수정
   Future<void> updateSub({
     required String id,
-    String? content,
     String? sdate,
+    String? content,
   }) {
     return (update(mib3Sub)..where((t) => t.id.equals(id))).write(
       Mib3SubCompanion(
@@ -121,7 +154,16 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
   }
+}
 
+/// 🔹 스트림 버전 (Obs로 쓰고 싶으면)
+
+
+class MibWithLastSubDate {
+  final Mib3Data memo;
+  final String? lastSubDate;
+
+  MibWithLastSubDate({required this.memo, this.lastSubDate});
 }
 
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:mib3/form/setting.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:get/get.dart';
 import '../comm/mib3_controller.dart';
@@ -136,7 +137,16 @@ class _MmemoState extends State<Mmemo> {
               setState(() {});
             },
           ),
-          IconButton(icon: const Icon(Icons.settings), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.settings), onPressed: () async {
+            await showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return const Msetting();
+            },
+            );
+
+            setState(() {});
+          }),
         ],
       ),
       body: Column(

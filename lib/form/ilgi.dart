@@ -3,23 +3,25 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mib3/form/progress_add.dart';
+import 'package:intl/intl.dart';
 
 import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
 import '../main.dart';
+import 'ilgi_add.dart';
 
-class Mprogress extends StatefulWidget {
-  const Mprogress({super.key});
+class Milgi extends StatefulWidget {
+  const Milgi({super.key});
 
   @override
-  State<Mprogress> createState() => _MprogressState();
+  State<Milgi> createState() => _MilgiState();
 }
 
-class _MprogressState extends State<Mprogress> {
+class _MilgiState extends State<Milgi> {
   final controller = Get.find<Mib3Controller>();
   late List<Map<String, dynamic>> rows;
-  String _title = "progress";
+  String _title =
+      "diary";
   String _wan_flag = "진행";
   bool _sort_flag = true;
 
@@ -35,7 +37,10 @@ class _MprogressState extends State<Mprogress> {
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFFFFC3A0), Color(0xFFFFAFBD)],
+                  colors: [
+                    Color(0xFFFFC3A0),
+                    Color(0xFFFFAFBD),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -59,11 +64,23 @@ class _MprogressState extends State<Mprogress> {
         title: Text(_title, style: const TextStyle(fontSize: 17)),
         actions: [
           IconButton(
+            icon: const Icon(Icons.calendar_month),
+            onPressed: () async {
+              final DateTime? picked = await showDatePicker(
+                context: context,
+                initialDate: DateTime.now(),
+                firstDate: DateTime(2015),
+                lastDate: DateTime(2101),
+                initialDatePickerMode: DatePickerMode.day,
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.content_paste_off),
             onPressed: () {
               setState(() {
                 _wan_flag = _wan_flag == "진행" ? "완료" : "진행";
-                _title = _wan_flag == "진행" ? "to do" : "to do (finish)";
+                _title = _wan_flag == "진행" ? "diary" : "diary (finish)";
               });
             },
           ),
@@ -80,21 +97,21 @@ class _MprogressState extends State<Mprogress> {
         children: [
           Expanded(
             child: Obx(() {
-              var filtered = controller.items_jin
-                  .where((item) => item.memo.tb == "진행" && item.memo.wan == _wan_flag)
+              var filtered = controller.items
+                  .where((item) => item.tb == "일기" && item.wan == _wan_flag)
                   .toList();
 
               if (_sort_flag) {
                 filtered.sort(
                       (a, b) => jsonDecode(
-                    a.memo.content,
-                  )['content1'].compareTo(jsonDecode(b.memo.content)['content1']),
+                    b.content,
+                  )['s_date'].compareTo(jsonDecode(a.content)['s_date']),
                 );
               } else {
                 filtered.sort(
                       (a, b) => jsonDecode(
-                    a.memo.content,
-                  )['content1'].compareTo(jsonDecode(b.memo.content)['content1']),
+                    a.content,
+                  )['content1'].compareTo(jsonDecode(b.content)['content1']),
                 );
               }
 
@@ -110,30 +127,26 @@ class _MprogressState extends State<Mprogress> {
                       dense: true,
                       title: Transform.translate(
                         offset: const Offset(0, 0),
-                        child: Text(jsonDecode(item.memo.content)["content1"],
+                        child: Text(
+                          "  ${jsonDecode(item.content)["s_date"].toString()}(${get_date_yo(jsonDecode(item.content)["s_date"])})\n${jsonDecode(item.content)["content1"]}",
                           maxLines: controller.setting_line_size,
                           overflow: TextOverflow.fade,
                           style:
                           TextStyle(fontSize: controller.setting_font_size + 0.0),
                         ),
                       ),
-                      trailing: Text(
-                        "${get_date_term2(item.lastSubDate==null?"":item.lastSubDate.toString())}일 지남",
-                        style: const TextStyle(
-                            fontSize: 10, color: Colors.blueAccent),
-                      ),
-
                       onTap: () async {
                         controller.temp_data = <String, dynamic>{
-                          "id": item.memo.id,
-                          "wan": item.memo.wan,
-                          "content1": jsonDecode(item.memo.content)['content1'],
-                          "content2": jsonDecode(item.memo.content)['content2'],
+                          "id": item.id,
+                          "wan": item.wan,
+                          "s_date": jsonDecode(item.content)['s_date'],
+                          "content1": jsonDecode(item.content)['content1'],
+                          "content2": jsonDecode(item.content)['content2'],
                         };
                         await showDialog(
                           context: context,
                           builder: (BuildContext context) {
-                            return const MprogressAdd();
+                            return const MilgiAdd();
                           },
                         );
                       },
@@ -141,7 +154,7 @@ class _MprogressState extends State<Mprogress> {
                         final s_data = <String, dynamic>{
                           "view_font_size": controller.setting_view_font_size
                               .toInt(),
-                          "content1": jsonDecode(item.memo.content)['content1'],
+                          "content1": jsonDecode(item.content)['content1'],
                         };
 
                         await Get.toNamed('/r/memo_view', arguments: s_data);
@@ -161,13 +174,14 @@ class _MprogressState extends State<Mprogress> {
           controller.temp_data = <String, dynamic>{
             "id": "new",
             "wan": "진행",
+            "s_date": DateFormat('yyyy-MM-dd').format(DateTime.now()),
             "content1": "",
             "content2": "",
           };
           await showDialog(
             context: context,
             builder: (BuildContext context) {
-              return const MprogressAdd();
+              return const MilgiAdd();
             },
           );
         },

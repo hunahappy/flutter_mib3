@@ -1,3 +1,4 @@
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:mib3/login_screen.dart';
@@ -16,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:mib3/form/memo_add.dart';
 
 import 'form/hal_add.dart';
+import 'form/ilgi_add.dart';
 import 'form/memo_view.dart';
 
 
@@ -46,6 +48,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'mib3 Demo',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
@@ -84,6 +87,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/r/memo_add', page: () => const MmemoAdd()),
         GetPage(name: '/r/memo_view', page: () => const MmemoView()),
         GetPage(name: '/r/hal_add', page: () => const MhalAdd()),
+        GetPage(name: '/r/ilgi_add', page: () => const MilgiAdd()),
       ],
     );
   }
