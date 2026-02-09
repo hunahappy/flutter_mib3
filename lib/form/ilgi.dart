@@ -19,6 +19,8 @@ class Milgi extends StatefulWidget {
 
 class _MilgiState extends State<Milgi> {
   final controller = Get.find<Mib3Controller>();
+  final textSearch = TextEditingController();
+
   late List<Map<String, dynamic>> rows;
   String _title =
       "diary";
@@ -30,32 +32,30 @@ class _MilgiState extends State<Milgi> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: false, // ← 이 줄 추가
       appBar: AppBar(
         flexibleSpace: Stack(
           children: [
-            // 기존 AppBar 그라데이션 (그대로 유지)
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    Color(0xFFFFC3A0),
-                    Color(0xFFFFAFBD),
-                  ],
+                  colors: [Color(0xFFFFC3A0), Color(0xFFFFAFBD)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
               ),
             ),
-            // ✅ 상태바 영역만 어둡게
+
+            // 상태바 영역만 정확히 처리
             Positioned(
               top: 0,
               left: 0,
               right: 0,
-              height: MediaQueryData.fromView(
-                WidgetsBinding.instance.platformDispatcher.views.first,
-              ).padding.top,
-              child: Container(
-                color: Colors.black.withOpacity(0.2), // ← 여기서 농도 조절
+              height: MediaQuery.of(context).padding.top,
+              child: IgnorePointer(
+                child: Container(
+                  color: Colors.black.withOpacity(0.2),
+                ),
               ),
             ),
           ],
@@ -64,14 +64,41 @@ class _MilgiState extends State<Milgi> {
         title: Text(_title, style: const TextStyle(fontSize: 17)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.calendar_month),
+            icon: const Icon(Icons.search),
             onPressed: () async {
-              final DateTime? picked = await showDatePicker(
+              showDialog(
                 context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2015),
-                lastDate: DateTime(2101),
-                initialDatePickerMode: DatePickerMode.day,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    content: SizedBox(
+                      width: 500.0,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextFormField(
+                            autofocus: true,
+                            controller: textSearch,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.search),
+                                onPressed: () {
+                                  setState(() {});
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -100,6 +127,17 @@ class _MilgiState extends State<Milgi> {
               var filtered = controller.items
                   .where((item) => item.tb == "일기" && item.wan == _wan_flag)
                   .toList();
+
+              if (textSearch.text.isNotEmpty) {
+                filtered = filtered
+                    .where(
+                      (item) => jsonDecode(item.content)['content1']
+                      .toString()
+                      .toLowerCase()
+                      .contains(textSearch.text.toLowerCase()),
+                )
+                    .toList();
+              }
 
               if (_sort_flag) {
                 filtered.sort(

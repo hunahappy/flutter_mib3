@@ -166,16 +166,28 @@ class _MmemoAddState extends State<MmemoAdd> {
                                 IconButton(
                                     icon: const Icon(Icons.content_paste_off),
                                     onPressed: () {
-                                      controller.updateItem(
-                                          controller.temp_data["id"],
-                                          '메모',
-                                          controller.temp_data['wan'] == "진행" ? "완료" : "진행",
-                                          jsonEncode({ 'jong': controller.temp_data['jong'],
-                                            'content1': textContent1.text, 'content2': textContent2.text,
-                                            'input_date': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}
-                                          )
-                                      );
-                                      checkClose = true;
+                                      if (controller.temp_data["id"] != "new") {
+                                        controller.updateItem(
+                                            controller.temp_data["id"],
+                                            '메모',
+                                            controller.temp_data['wan'] == "진행"
+                                                ? "완료"
+                                                : "진행",
+                                            jsonEncode({
+                                              'jong': controller
+                                                  .temp_data['jong'],
+                                              'content1': textContent1.text,
+                                              'content2': textContent2.text,
+                                              'input_date': DateFormat(
+                                                  'yyyy-MM-dd HH:mm:ss').format(
+                                                  DateTime.now())
+                                            }
+                                            )
+                                        );
+                                        checkClose = true;
+                                      } else {
+                                        show_toast("no data", context);
+                                      }
                                       Navigator.of(context).pop();
                                     }),
                               ],

@@ -94,20 +94,24 @@ class _MprogressAddState extends State<MprogressAdd> {
                       IconButton(
                         icon: const Icon(Icons.add),
                         onPressed: () async {
-                          controller.sub_temp_data = <String, dynamic>{
-                            "id": "new",
-                            "sdate": DateFormat(
-                              'yyyy-MM-dd',
-                            ).format(DateTime.now()),
-                            "content1": "",
-                            "content2": "",
-                          };
-                          await showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return const MprogressSubAdd();
-                            },
-                          );
+                          if (controller.temp_data["id"].toString() != "new") {
+                            controller.sub_temp_data = <String, dynamic>{
+                              "id": "new",
+                              "sdate": DateFormat(
+                                'yyyy-MM-dd',
+                              ).format(DateTime.now()),
+                              "content1": "",
+                              "content2": "",
+                            };
+                            await showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return const MprogressSubAdd();
+                              },
+                            );
+                          } else {
+                            show_toast("no data", context);
+                          }
                         },
                       ),
                       const Spacer(),
@@ -125,21 +129,25 @@ class _MprogressAddState extends State<MprogressAdd> {
                                   IconButton(
                                     icon: const Icon(Icons.content_paste_off),
                                     onPressed: () {
-                                      controller.updateItem(
-                                        controller.temp_data["id"],
-                                        '진행',
-                                        controller.temp_data['wan'] == "진행"
-                                            ? "완료"
-                                            : "진행",
-                                        jsonEncode({
-                                          'content1': textContent1.text,
-                                          'content2': textContent2.text,
-                                          'input_date': DateFormat(
-                                            'yyyy-MM-dd HH:mm:ss',
-                                          ).format(DateTime.now()),
-                                        }),
-                                      );
-                                      checkClose = true;
+                                      if (controller.temp_data["id"] != "new") {
+                                        controller.updateItem(
+                                          controller.temp_data["id"],
+                                          '진행',
+                                          controller.temp_data['wan'] == "진행"
+                                              ? "완료"
+                                              : "진행",
+                                          jsonEncode({
+                                            'content1': textContent1.text,
+                                            'content2': textContent2.text,
+                                            'input_date': DateFormat(
+                                              'yyyy-MM-dd HH:mm:ss',
+                                            ).format(DateTime.now()),
+                                          }),
+                                        );
+                                        checkClose = true;
+                                      } else {
+                                        show_toast("no data", context);
+                                      }
                                       Navigator.of(context).pop();
                                     },
                                   ),

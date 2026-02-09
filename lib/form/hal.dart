@@ -31,32 +31,30 @@ class _MhalState extends State<Mhal> {
   @override
   Widget build(BuildContext context) {
       return Scaffold(
+        extendBodyBehindAppBar: false, // ← 이 줄 추가
       appBar: AppBar(
         flexibleSpace: Stack(
           children: [
-            // 기존 AppBar 그라데이션 (그대로 유지)
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    Color(0xFFFFC3A0),
-                    Color(0xFFFFAFBD),
-                  ],
+                  colors: [Color(0xFFFFC3A0), Color(0xFFFFAFBD)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
               ),
             ),
-            // ✅ 상태바 영역만 어둡게
+
+            // 상태바 영역만 정확히 처리
             Positioned(
               top: 0,
               left: 0,
               right: 0,
-              height: MediaQueryData.fromView(
-                WidgetsBinding.instance.platformDispatcher.views.first,
-              ).padding.top,
-              child: Container(
-                color: Colors.black.withOpacity(0.2), // ← 여기서 농도 조절
+              height: MediaQuery.of(context).padding.top,
+              child: IgnorePointer(
+                child: Container(
+                  color: Colors.black.withOpacity(0.2),
+                ),
               ),
             ),
           ],

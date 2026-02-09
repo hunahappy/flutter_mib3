@@ -470,7 +470,7 @@ void show_toast(String msg, context) {
 
 String get_date_yo(String pDate) {
   if (pDate.length < 10) return '';
-  return DateFormat.E().format(DateTime.parse(pDate));
+  return DateFormat('E', 'ko_KR').format(DateTime.parse(pDate)); // 월
 }
 
 int get_date_term2(String pDate) {

@@ -32,7 +32,7 @@ void main() async {
     setWindowTitle('mib3'); // 윈도우 타이틀
     setWindowMinSize(const Size(800, 600)); // 최소 크기
     setWindowMaxSize(Size.infinite);       // 최대 크기 제한 없음
-    setWindowFrame(const Rect.fromLTWH(100, 100, 800, 1000)); // 초기 위치와 크기
+    setWindowFrame(const Rect.fromLTWH(100, 100, 768, 1024)); // 초기 위치와 크기
   }
 
   await Firebase.initializeApp(

@@ -89,8 +89,8 @@ class _MilgiAddState extends State<MilgiAdd> {
                         fontSize: 14,
                       ),
                       controller: textContent1,
-                      minLines: 5,
-                      maxLines: 8,
+                      minLines: 8,
+                      maxLines: 10,
                     ),
                     const SizedBox(height: 15),
                     TextFormField(
@@ -127,17 +127,28 @@ class _MilgiAddState extends State<MilgiAdd> {
                                       IconButton(
                                           icon: const Icon(Icons.content_paste_off),
                                           onPressed: () {
-                                            controller.updateItem(
-                                                controller.temp_data["id"],
-                                                '할일',
-                                                controller.temp_data['wan'] == "진행" ? "완료" : "진행",
-                                                jsonEncode({
-                                                  's_date': textDate.text,
-                                                  'content1': textContent1.text, 'content2': textContent2.text,
-                                                  'input_date': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}
-                                                )
-                                            );
-                                            checkClose = true;
+                                            if (controller.temp_data["id"] != "new") {
+                                              controller.updateItem(
+                                                  controller.temp_data["id"],
+                                                  '할일',
+                                                  controller.temp_data['wan'] ==
+                                                      "진행" ? "완료" : "진행",
+                                                  jsonEncode({
+                                                    's_date': textDate.text,
+                                                    'content1': textContent1
+                                                        .text,
+                                                    'content2': textContent2
+                                                        .text,
+                                                    'input_date': DateFormat(
+                                                        'yyyy-MM-dd HH:mm:ss')
+                                                        .format(DateTime.now())
+                                                  }
+                                                  )
+                                              );
+                                              checkClose = true;
+                                            } else {
+                                              show_toast("no data", context);
+                                            }
                                             Navigator.of(context).pop();
                                           }
                                       ),
