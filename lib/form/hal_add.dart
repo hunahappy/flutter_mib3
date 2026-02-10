@@ -116,7 +116,6 @@ class _MhalAddState extends State<MhalAdd> {
                     IconButton(
                         icon: const Icon(Icons.content_paste_off),
                         onPressed: () async {
-                          bool checkClose = false;
                           await showDialog(
                             context: context,
                             builder: (BuildContext context) {
@@ -128,6 +127,8 @@ class _MhalAddState extends State<MhalAdd> {
                                       icon: const Icon(Icons.content_paste_off),
                                       onPressed: () {
                                         if (controller.temp_data["id"] != "new") {
+                                          Navigator.of(context).pop();
+                                          Navigator.of(context).pop();
                                           controller.updateItem(
                                               controller.temp_data["id"],
                                               '할일',
@@ -143,20 +144,15 @@ class _MhalAddState extends State<MhalAdd> {
                                               }
                                               )
                                           );
-                                          checkClose = true;
                                         } else {
                                           show_toast("no data", context);
                                         }
-                                        Navigator.of(context).pop();
                                       }
                                   ),
                                 ],
                               );
                             },
                           );
-                          if (checkClose) {
-                            Navigator.of(context).pop();
-                          }
                         }),
                     const SizedBox(
                       width: 20,
@@ -164,7 +160,6 @@ class _MhalAddState extends State<MhalAdd> {
                     IconButton(
                         icon: const Icon(Icons.delete),
                         onPressed: () async {
-                          bool checkClose = false;
                           await showDialog(
                             context: context,
                             builder: (BuildContext context) {
@@ -176,8 +171,9 @@ class _MhalAddState extends State<MhalAdd> {
                                       icon: const Icon(Icons.delete),
                                       onPressed: () {
                                         if (controller.temp_data["id"] != "new") {
+                                          Navigator.of(context).pop();
+                                          Navigator.of(context).pop();
                                           controller.removeItem(controller.temp_data["id"]);
-                                          checkClose = true;
                                         } else {
                                           show_toast("no data", context);
                                         }
@@ -189,14 +185,12 @@ class _MhalAddState extends State<MhalAdd> {
                               );
                             },
                           );
-                          if (checkClose) {
-                            Navigator.of(context).pop();
-                          }
                         }),
                     const SizedBox(width: 20),
                     IconButton(
                         icon: const Icon(Icons.save),
                         onPressed: () async {
+                          Navigator.of(context).pop();
                           if (controller.temp_data["id"].toString() == "new") {
                             await controller.addItem(
                                 '할일',
@@ -219,7 +213,6 @@ class _MhalAddState extends State<MhalAdd> {
                                   'input_date': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}
                                 )
                             );
-                            Navigator.of(context).pop();
                           }
                         }
                       ),

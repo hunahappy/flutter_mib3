@@ -25,8 +25,12 @@ class _MsettingState extends State<Msetting> {
 
   final controller = Get.find<Mib3Controller>();
 
+  List<String> items_font = ['OpenSans-Medium','Cafe24Oneprettynight-v2.0', 'Cafe24PROSlimAir', 'Cafe24PROSlimFit', 'Cafe24Simplehae-v2.0', 'Cafe24SsukssukLight', 'Cafe24SsurroundAir-v1.1', 'Cafe24Supermagic-Regular-v1.0'];
+  TextStyle? _selectedFontTextStyle;
+
   @override
   void initState() {
+    // _selectedFontTextStyle.
     textContent1.text = controller.setting_font_size.toString();
     textContent2.text = controller.setting_view_font_size.toString();
     textContent3.text = controller.setting_line_size.toString();
@@ -41,19 +45,40 @@ class _MsettingState extends State<Msetting> {
         contentPadding: const EdgeInsets.all(5),
         content: SingleChildScrollView(
             child: Column(children: [
-              SizedBox(width:MediaQuery.of(context).size.width, height: 30),
+              SizedBox(width:MediaQuery.of(context).size.width, height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   const SizedBox(
-                    width: 5,
+                    width: 20,
                   ),
                   const Text('font', style: TextStyle(fontSize: 12)),
                   const SizedBox(
                     width: 10,
                   ),
+                  DropdownButton<String>(
+                    value: controller.setting_font,
+                    items: items_font.map((String item) {
+                      return DropdownMenuItem<String>(
+                        value: item,
+                        child: Text(item, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blue)),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      controller.setting_font = newValue!;
+                      setState(() {
+                        _selectedFontTextStyle = TextStyle(fontFamily: newValue);
+                      });
+                    },
+                  ),
+                ],
+              ),
+              SizedBox(width:MediaQuery.of(context).size.width, height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
                   const SizedBox(
-                    width: 10,
+                    width: 20,
                   ),
                   SizedBox(
                     width: 90.0,
@@ -115,12 +140,12 @@ class _MsettingState extends State<Msetting> {
                 ],
               ),
               const SizedBox(
-                height: 20,
+                height: 30,
               ),
               Row(
                 children: [
                   const SizedBox(
-                    width: 10,
+                    width: 20,
                   ),
                   ElevatedButton(
                     onPressed: () async {
@@ -137,6 +162,13 @@ class _MsettingState extends State<Msetting> {
                   ),
                   ElevatedButton(
                     onPressed: () async {
+                      final themeCtrl = Get.find<ThemeController>();
+                      themeCtrl.setFont(controller.setting_font); // ⭐⭐⭐ 이 줄이 핵심
+
+                      controller.updateSetting(
+                          'font',
+                        controller.setting_font
+                      );
                       await controller.updateSetting(
                           'font_size',
                           textContent1.text

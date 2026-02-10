@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
@@ -7,6 +8,24 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 
 import 'app_database.dart';
+
+class ThemeController extends GetxController {
+  final fontFamily = 'OpenSans-Medium'.obs;
+
+  void setFont(String font) {
+    fontFamily.value = font;
+  }
+
+  ThemeData get lightTheme => ThemeData(
+    brightness: Brightness.light,
+    fontFamily: fontFamily.value,
+  );
+
+  ThemeData get darkTheme => ThemeData(
+    brightness: Brightness.dark,
+    fontFamily: fontFamily.value,
+  );
+}
 
 /// =====================
 /// Offline Sync
@@ -42,7 +61,7 @@ class Mib3Controller extends GetxController {
   // =====================
   // Setting
   // =====================
-  String setting_font = '';
+  String setting_font = 'OpenSans-Medium';
   int setting_font_size = 14;
   int setting_view_font_size = 18;
   int setting_line_size = 10;
@@ -66,13 +85,14 @@ class Mib3Controller extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadSettings();
+    loadSettings();
     _watchLocal();
 
-    FirebaseAuth.instance.authStateChanges().listen((user) {
+    FirebaseAuth.instance.authStateChanges().listen((user) async {
       if (user == null) {
         uid = null;
         print('🔓 로그아웃 상태');
+        await _resetAll(); // ← 여기
       } else {
         uid = user.uid;
         print('🔐 로그인됨: $uid');
@@ -83,15 +103,39 @@ class Mib3Controller extends GetxController {
     });
   }
 
+
+
+  Future<void> _resetAll() async {
+    print('🧹 RESET ALL START');
+    // 1️⃣ 로컬 DB 전체 삭제
+    await db.clearAll();
+    // ⬆️ AppDatabase에 clearAll() 함수 필요 (아래 참고)
+
+    // 2️⃣ 메모리 상태 초기화
+    items.clear();
+    items_jin.clear();
+    subs.clear();
+
+    temp_data = <String, dynamic>{'id': 'new'};
+    sub_temp_data = <String, dynamic>{'id': 'new'};
+
+    // 4️⃣ 오프라인 동기화 큐 초기화
+    _syncQueue.clear();
+
+    print('🧹 RESET ALL DONE');
+  }
+
   // =====================
   // Setting
   // =====================
-  Future<void> _loadSettings() async {
+  Future<void> loadSettings() async {
+    final themeCtrl = Get.find<ThemeController>();
     final list = await db.getAllSettings();
     for (final s in list) {
       switch (s.id) {
         case 'font':
           setting_font = s.content;
+          themeCtrl.setFont(s.content);
           break;
         case 'font_size':
           setting_font_size = int.tryParse(s.content) ?? 1;
@@ -487,3 +531,4 @@ int get_term_day(String date_1, String date_2) {
 
   return date_now.difference(date_last).inDays;
 }
+

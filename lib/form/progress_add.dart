@@ -118,7 +118,6 @@ class _MprogressAddState extends State<MprogressAdd> {
                       IconButton(
                         icon: const Icon(Icons.content_paste_off),
                         onPressed: () async {
-                          bool checkClose = false;
                           await showDialog(
                             context: context,
                             builder: (BuildContext context) {
@@ -129,6 +128,8 @@ class _MprogressAddState extends State<MprogressAdd> {
                                   IconButton(
                                     icon: const Icon(Icons.content_paste_off),
                                     onPressed: () {
+                                      Navigator.of(context).pop();
+                                      Navigator.of(context).pop();
                                       if (controller.temp_data["id"] != "new") {
                                         controller.updateItem(
                                           controller.temp_data["id"],
@@ -144,27 +145,21 @@ class _MprogressAddState extends State<MprogressAdd> {
                                             ).format(DateTime.now()),
                                           }),
                                         );
-                                        checkClose = true;
                                       } else {
                                         show_toast("no data", context);
                                       }
-                                      Navigator.of(context).pop();
                                     },
                                   ),
                                 ],
                               );
                             },
                           );
-                          if (checkClose) {
-                            Navigator.of(context).pop();
-                          }
                         },
                       ),
                       const SizedBox(width: 20),
                       IconButton(
                         icon: const Icon(Icons.delete),
                         onPressed: () async {
-                          bool checkClose = false;
                           await showDialog(
                             context: context,
                             builder: (BuildContext context) {
@@ -176,33 +171,30 @@ class _MprogressAddState extends State<MprogressAdd> {
                                     icon: const Icon(Icons.delete),
                                     onPressed: () {
                                       if (controller.temp_data["id"] != "new") {
+                                        Navigator.of(context).pop();
+                                        Navigator.of(context).pop();
                                         controller.removeItem(
                                           controller.temp_data["id"],
                                         );
                                         controller.removeByMasterSub(
                                           controller.temp_data["id"],
                                         );
-                                        checkClose = true;
                                       } else {
                                         show_toast("no data", context);
                                       }
-
-                                      Navigator.of(context).pop();
                                     },
                                   ),
                                 ],
                               );
                             },
                           );
-                          if (checkClose) {
-                            Navigator.of(context).pop();
-                          }
                         },
                       ),
                       const SizedBox(width: 20),
                       IconButton(
                         icon: const Icon(Icons.save),
                         onPressed: () async {
+                          Navigator.of(context).pop();
                           if (controller.temp_data["id"].toString() == "new") {
                             await controller.addItem(
                               '진행',
@@ -215,7 +207,6 @@ class _MprogressAddState extends State<MprogressAdd> {
                                 ).format(DateTime.now()),
                               }),
                             );
-                            Navigator.of(context).pop();
                           } else {
                             await controller.updateItem(
                               controller.temp_data["id"],
@@ -229,7 +220,6 @@ class _MprogressAddState extends State<MprogressAdd> {
                                 ).format(DateTime.now()),
                               }),
                             );
-                            Navigator.of(context).pop();
                           }
                         },
                       ),

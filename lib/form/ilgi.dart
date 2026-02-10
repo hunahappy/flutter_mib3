@@ -188,16 +188,6 @@ class _MilgiState extends State<Milgi> {
                           },
                         );
                       },
-                      onLongPress: () async {
-                        final s_data = <String, dynamic>{
-                          "view_font_size": controller.setting_view_font_size
-                              .toInt(),
-                          "content1": jsonDecode(item.content)['content1'],
-                        };
-
-                        await Get.toNamed('/r/memo_view', arguments: s_data);
-                        setState(() {});
-                      },
                     ),
                   );
                 },

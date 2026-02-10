@@ -19,6 +19,13 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 1;
 
+  Future<void> clearAll() async {
+    await batch((b) {
+      b.deleteAll(mib3);
+      b.deleteAll(mib3Sub);
+    });
+  }
+
   Future<List<Mib3Data>> getAll() => select(mib3).get();
   Stream<List<Mib3Data>> watchAll() => select(mib3).watch();
 
@@ -70,7 +77,7 @@ class AppDatabase extends _$AppDatabase {
       // 기본 setting 값
       await batch((b) {
         b.insertAll(setting, [
-          SettingCompanion.insert(id: 'font', content: 'OpenSans'),
+          SettingCompanion.insert(id: 'font', content: 'OpenSans-Medium'),
           SettingCompanion.insert(id: 'font_size', content: '14'),
           SettingCompanion.insert(id: 'view_font_size', content: '16'),
           SettingCompanion.insert(id: 'line_size', content: '10'),

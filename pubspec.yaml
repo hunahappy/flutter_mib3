@@ -45,6 +45,35 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  assets:
+    - assets/font/
+
+  fonts:
+    - family: OpenSans-Medium
+      fonts:
+        - asset: assets/font/OpenSans-Medium.ttf
+    - family: Cafe24Oneprettynight-v2.0
+      fonts:
+        - asset: assets/font/Cafe24Oneprettynight-v2.0.ttf
+    - family: Cafe24PROSlimAir
+      fonts:
+        - asset: assets/font/Cafe24PROSlimAir.ttf
+    - family: Cafe24PROSlimFit
+      fonts:
+        - asset: assets/font/Cafe24PROSlimFit.ttf
+    - family: Cafe24Simplehae-v2.0
+      fonts:
+        - asset: assets/font/Cafe24Simplehae-v2.0.ttf
+    - family: Cafe24SsukssukLight
+      fonts:
+        - asset: assets/font/Cafe24SsukssukLight.ttf
+    - family: Cafe24SsurroundAir-v1.1
+      fonts:
+        - asset: assets/font/Cafe24SsurroundAir-v1.1.ttf
+    - family: Cafe24Supermagic-Regular-v1.0
+      fonts:
+        - asset: assets/font/Cafe24Supermagic-Regular-v1.0.ttf
+
 flutter_launcher_icons:
   android: true
   ios: true

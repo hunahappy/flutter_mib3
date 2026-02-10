@@ -222,14 +222,34 @@ class _MmemoState extends State<Mmemo> {
                         );
                       },
                       onLongPress: () async {
-                        final s_data = <String, dynamic>{
-                          "view_font_size": controller.setting_view_font_size
-                              .toInt(),
-                          "content1": jsonDecode(item.content)['content1'],
-                        };
+                        var index_move = index;
+                        while(true) {
+                          final s_data = <String, dynamic>{
+                            "view_font_size": controller.setting_view_font_size
+                                .toInt(),
+                            "content1": jsonDecode(filtered[index_move].content)['content1'],
+                          };
 
-                        await Get.toNamed('/r/memo_view', arguments: s_data);
-                        setState(() {});
+                          var return_value = await Get.toNamed('/r/memo_view', arguments: s_data);
+
+                          print(index_move);
+
+                          if (return_value != null) {
+                            if (return_value < 0) {
+                              index_move++;
+                              if (index_move > filtered.length) {
+                                break;
+                              }
+                            } else {
+                              index_move--;
+                              if (index_move < 0) {
+                                break;
+                              }
+                            }
+                          } else {
+                            break;
+                          }
+                        }
                       },
                     ),
                   );

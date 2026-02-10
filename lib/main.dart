@@ -49,6 +49,7 @@ void main() async {
     await FirebaseAuth.instance.signOut();
   }
 
+  Get.put(ThemeController()); // ⭐ 추가
   final db = AppDatabase();
   Get.put(Mib3Controller(db));
   //////////////////////////////////////////////////////////////////////////////
@@ -61,11 +62,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    final themeCtrl = Get.find<ThemeController>();
+
+    return Obx(() => GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'mib3 Demo',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: themeCtrl.lightTheme,
+      darkTheme: themeCtrl.darkTheme,
       themeMode: ThemeMode.light,
 
       locale: const Locale('ko', 'KR'),
@@ -103,6 +106,6 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/r/hal_add', page: () => const MhalAdd()),
         GetPage(name: '/r/ilgi_add', page: () => const MilgiAdd()),
       ],
-    );
+    ));
   }
 }

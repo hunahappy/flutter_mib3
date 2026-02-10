@@ -140,10 +140,21 @@ class _MprogressState extends State<Mprogress> {
                         );
                       },
                       onLongPress: () async {
+                        var filtered = controller.subs
+                            .where((it) => it.masterId.toString() == item.memo.id,).toList();
+
+                        filtered.sort((a, b) => a.sdate.compareTo(b.sdate));
+
+                        String data_sub = "";
+                        for (var element in filtered) {
+                          var row = jsonDecode(element.content);
+                          data_sub = "$data_sub ${element.sdate}(${get_date_yo(element.sdate)})\n" + row["content1"] + "\n" + row["content2"]+ "\n\n";
+                        }
+
                         final s_data = <String, dynamic>{
                           "view_font_size": controller.setting_view_font_size
                               .toInt(),
-                          "content1": jsonDecode(item.memo.content)['content1'],
+                          "content1": jsonDecode(item.memo.content)['content1']+"\n\n"+data_sub,
                         };
 
                         await Get.toNamed('/r/memo_view', arguments: s_data);
