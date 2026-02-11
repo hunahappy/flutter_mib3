@@ -22,8 +22,9 @@ class _MhalState extends State<Mhal> {
   final controller = Get.find<Mib3Controller>();
   late List<Map<String, dynamic>> rows;
   String _title =
-      "to do ${DateFormat('MM-dd').format(DateTime.now())} ${DateFormat.E().format(DateTime.now())}";
+      "to do ${DateFormat('MM-dd').format(DateTime.now())} ${get_date_yo(DateTime.now().toString())}";
   String _wan_flag = "진행";
+  String _date_flag = "";
   bool _sort_flag = true;
 
   final ScrollController _controller = ScrollController();
@@ -66,9 +67,12 @@ class _MhalState extends State<Mhal> {
             icon: const Icon(Icons.calendar_month),
             onPressed: () async {
               final picked = await showCalendarDialog(context);
-              if (picked != null) {
-                print('선택한 날짜: $picked');
+              if (picked == null) {
+                _date_flag = "";
+              } else {
+                _date_flag = picked.toString();
               }
+              setState(() {});
             },
           ),
           IconButton(
@@ -96,6 +100,12 @@ class _MhalState extends State<Mhal> {
               var filtered = controller.items
                   .where((item) => item.tb == "할일" && item.wan == _wan_flag)
                   .toList();
+
+              if (_date_flag != "") {
+                filtered = filtered
+                    .where((item) => jsonDecode(item.content)['s_date'].toString().compareTo(_date_flag.substring(0,10)) <= 0)
+                    .toList();
+              }
 
               if (_sort_flag) {
                 filtered.sort(

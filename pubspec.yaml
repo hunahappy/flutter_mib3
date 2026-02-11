@@ -52,27 +52,15 @@ flutter:
     - family: OpenSans-Medium
       fonts:
         - asset: assets/font/OpenSans-Medium.ttf
-    - family: Cafe24Oneprettynight-v2.0
+    - family: D2Coding-Ver1.3.2-20180524
       fonts:
-        - asset: assets/font/Cafe24Oneprettynight-v2.0.ttf
-    - family: Cafe24PROSlimAir
+        - asset: assets/font/D2Coding-Ver1.3.2-20180524.ttf
+    - family: SeoulHangangM
       fonts:
-        - asset: assets/font/Cafe24PROSlimAir.ttf
-    - family: Cafe24PROSlimFit
+        - asset: assets/font/SeoulHangangM.ttf
+    - family: 경기천년제목_Light
       fonts:
-        - asset: assets/font/Cafe24PROSlimFit.ttf
-    - family: Cafe24Simplehae-v2.0
-      fonts:
-        - asset: assets/font/Cafe24Simplehae-v2.0.ttf
-    - family: Cafe24SsukssukLight
-      fonts:
-        - asset: assets/font/Cafe24SsukssukLight.ttf
-    - family: Cafe24SsurroundAir-v1.1
-      fonts:
-        - asset: assets/font/Cafe24SsurroundAir-v1.1.ttf
-    - family: Cafe24Supermagic-Regular-v1.0
-      fonts:
-        - asset: assets/font/Cafe24Supermagic-Regular-v1.0.ttf
+        - asset: assets/font/경기천년제목_Light.ttf
 
 flutter_launcher_icons:
   android: true

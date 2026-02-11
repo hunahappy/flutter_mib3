@@ -25,7 +25,7 @@ class _MsettingState extends State<Msetting> {
 
   final controller = Get.find<Mib3Controller>();
 
-  List<String> items_font = ['OpenSans-Medium','Cafe24Oneprettynight-v2.0', 'Cafe24PROSlimAir', 'Cafe24PROSlimFit', 'Cafe24Simplehae-v2.0', 'Cafe24SsukssukLight', 'Cafe24SsurroundAir-v1.1', 'Cafe24Supermagic-Regular-v1.0'];
+  List<String> items_font = ['OpenSans-Medium', 'D2Coding-Ver1.3.2-20180524', 'SeoulHangangM', '경기천년제목_Light'];
   TextStyle? _selectedFontTextStyle;
 
   @override
