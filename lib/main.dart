@@ -1,58 +1,55 @@
-
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:mib3/login_screen.dart';
-import 'package:mib3/mib_screen.dart';
-import 'app_theme.dart';
-import 'comm/app_database.dart';
-import 'comm/mib3_controller.dart';
-import 'firebase_options.dart';
-import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:get/get.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:window_size/window_size.dart';
 
-import 'package:flutter/material.dart';
+import 'firebase_options.dart';
+import 'login_screen.dart';
+import 'mib_screen.dart';
 
-import 'package:mib3/form/memo_add.dart';
+import 'comm/app_database.dart';
+import 'comm/mib3_controller.dart';
 
+import 'form/memo_add.dart';
+import 'form/memo_view.dart';
 import 'form/hal_add.dart';
 import 'form/ilgi_add.dart';
-import 'form/memo_view.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('ko_KR', null);
 
   if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-    setWindowTitle('mib3'); // 윈도우 타이틀
-    setWindowMinSize(const Size(800, 600)); // 최소 크기
-    setWindowMaxSize(Size.infinite);       // 최대 크기 제한 없음
-    setWindowFrame(const Rect.fromLTWH(100, 100, 768, 1024)); // 초기 위치와 크기
+    setWindowTitle('mib3');
+    setWindowMinSize(const Size(800, 600));
+    setWindowMaxSize(Size.infinite);
+    setWindowFrame(const Rect.fromLTWH(100, 100, 768, 1024));
   }
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
   final user = FirebaseAuth.instance.currentUser;
-
   if (user != null && user.isAnonymous) {
     await FirebaseAuth.instance.signOut();
   }
 
-  Get.put(ThemeController()); // ⭐ 추가
+  /// ✅ 컨트롤러 등록 (순서 중요)
+  Get.put(ThemeController(), permanent: true);
   final db = AppDatabase();
-  Get.put(Mib3Controller(db));
-  //////////////////////////////////////////////////////////////////////////////
+  Get.put(Mib3Controller(db), permanent: true);
 
   runApp(const MyApp());
 }
@@ -64,12 +61,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeCtrl = Get.find<ThemeController>();
 
+    /// ⭐ 여기 핵심
     return Obx(() => GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'mib3 Demo',
+
+      /// 🔥 테마는 컨트롤러 값을 직접 사용
+      themeMode: themeCtrl.themeMode.value,
       theme: themeCtrl.lightTheme,
       darkTheme: themeCtrl.darkTheme,
-      themeMode: ThemeMode.light,
 
       locale: const Locale('ko', 'KR'),
       fallbackLocale: const Locale('ko', 'KR'),
@@ -83,7 +83,7 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
 
-      home: StreamBuilder<User?>( 
+      home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -91,12 +91,9 @@ class MyApp extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          if (snapshot.hasData) {
-            return MibScreen();
-            // return const LoginScreen();
-          } else {
-            return const LoginScreen();
-          }
+          return snapshot.hasData
+              ? MibScreen()
+              : const LoginScreen();
         },
       ),
 

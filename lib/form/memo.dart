@@ -30,11 +30,18 @@ class _MmemoState extends State<Mmemo> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       extendBodyBehindAppBar: false, // ← 이 줄 추가
       appBar: AppBar(
-        flexibleSpace: Stack(
+        // ✅ 다크일 때는 검은색
+        backgroundColor: isDark ? Colors.black : null,
+
+        // ✅ 라이트/시스템일 때만 그라데이션
+        flexibleSpace: isDark
+            ? null
+            : Stack(
           children: [
             Container(
               decoration: const BoxDecoration(
@@ -45,8 +52,6 @@ class _MmemoState extends State<Mmemo> {
                 ),
               ),
             ),
-
-            // 상태바 영역만 정확히 처리
             Positioned(
               top: 0,
               left: 0,
@@ -60,6 +65,7 @@ class _MmemoState extends State<Mmemo> {
             ),
           ],
         ),
+
         toolbarHeight: 37,
         title: Text(_title, style: const TextStyle(fontSize: 17)),
         actions: [

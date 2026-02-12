@@ -77,6 +77,7 @@ class AppDatabase extends _$AppDatabase {
       // 기본 setting 값
       await batch((b) {
         b.insertAll(setting, [
+          SettingCompanion.insert(id: 'theme', content: 'system'),
           SettingCompanion.insert(id: 'font', content: 'OpenSans-Medium'),
           SettingCompanion.insert(id: 'font_size', content: '14'),
           SettingCompanion.insert(id: 'view_font_size', content: '16'),

@@ -11,9 +11,14 @@ import 'app_database.dart';
 
 class ThemeController extends GetxController {
   final fontFamily = 'OpenSans-Medium'.obs;
+  final themeMode = ThemeMode.system.obs;
 
   void setFont(String font) {
     fontFamily.value = font;
+  }
+
+  void setThemeMode(ThemeMode mode) {
+    themeMode.value = mode;
   }
 
   ThemeData get lightTheme => ThemeData(
@@ -46,6 +51,18 @@ class SyncQueueItem {
   });
 }
 
+
+ThemeMode _parseTheme(String v) {
+  switch (v) {
+    case 'light':
+      return ThemeMode.light;
+    case 'dark':
+      return ThemeMode.dark;
+    default:
+      return ThemeMode.system;
+  }
+}
+
 /// =====================
 /// Controller
 /// =====================
@@ -62,6 +79,7 @@ class Mib3Controller extends GetxController {
   // Setting
   // =====================
   String setting_font = 'OpenSans-Medium';
+  String setting_theme = 'system';
   int setting_font_size = 14;
   int setting_view_font_size = 18;
   int setting_line_size = 10;
@@ -133,6 +151,11 @@ class Mib3Controller extends GetxController {
     final list = await db.getAllSettings();
     for (final s in list) {
       switch (s.id) {
+        case 'theme': // ⭐ 추가
+          setting_theme = s.content;
+          themeCtrl.setThemeMode(_parseTheme(s.content));
+
+          break;
         case 'font':
           setting_font = s.content;
           themeCtrl.setFont(s.content);
@@ -154,6 +177,9 @@ class Mib3Controller extends GetxController {
     await db.setSetting(id, value);
 
     switch (id) {
+      case 'theme':
+        setting_theme = value;
+        break;
       case 'font':
         setting_font = value;
         break;

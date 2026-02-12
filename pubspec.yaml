@@ -55,12 +55,18 @@ flutter:
     - family: D2Coding-Ver1.3.2-20180524
       fonts:
         - asset: assets/font/D2Coding-Ver1.3.2-20180524.ttf
-    - family: SeoulHangangM
-      fonts:
-        - asset: assets/font/SeoulHangangM.ttf
     - family: 경기천년제목_Light
       fonts:
         - asset: assets/font/경기천년제목_Light.ttf
+    - family: SeoulHangangB
+      fonts:
+        - asset: assets/font/SeoulHangangB.ttf
+    - family: SeoulNamsanB
+      fonts:
+        - asset: assets/font/SeoulNamsanB.ttf
+    - family: 경기천년제목_Medium
+      fonts:
+        - asset: assets/font/경기천년제목_Medium.ttf
 
 flutter_launcher_icons:
   android: true

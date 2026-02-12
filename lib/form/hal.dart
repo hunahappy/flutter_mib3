@@ -31,35 +31,41 @@ class _MhalState extends State<Mhal> {
 
   @override
   Widget build(BuildContext context) {
-      return Scaffold(
-        extendBodyBehindAppBar: false, // ← 이 줄 추가
-      appBar: AppBar(
-        flexibleSpace: Stack(
-          children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFFFC3A0), Color(0xFFFFAFBD)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-            // 상태바 영역만 정확히 처리
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: MediaQuery.of(context).padding.top,
-              child: IgnorePointer(
-                child: Container(
-                  color: Colors.black.withOpacity(0.2),
+    return Scaffold(
+        extendBodyBehindAppBar: false, // ← 이 줄 추가
+        appBar: AppBar(
+          // ✅ 다크일 때는 검은색
+            backgroundColor: isDark ? Colors.black : null,
+
+            // ✅ 라이트/시스템일 때만 그라데이션
+            flexibleSpace: isDark
+                ? null
+                : Stack(
+              children: [
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFFFC3A0), Color(0xFFFFAFBD)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
                 ),
-              ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: MediaQuery.of(context).padding.top,
+                  child: IgnorePointer(
+                    child: Container(
+                      color: Colors.black.withOpacity(0.2),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
         toolbarHeight: 37,
         title: Text(_title, style: const TextStyle(fontSize: 17)),
         actions: [

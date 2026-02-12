@@ -1,13 +1,9 @@
-import 'dart:convert';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:intl/intl.dart';
 
-import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
 import '../main.dart';
 
@@ -24,175 +20,166 @@ class _MsettingState extends State<Msetting> {
   final textContent3 = TextEditingController();
 
   final controller = Get.find<Mib3Controller>();
+  final themeCtrl = Get.find<ThemeController>();
 
-  List<String> items_font = ['OpenSans-Medium', 'D2Coding-Ver1.3.2-20180524', 'SeoulHangangM', '경기천년제목_Light'];
-  TextStyle? _selectedFontTextStyle;
+  final itemsFont = [
+    'OpenSans-Medium',
+    'D2Coding-Ver1.3.2-20180524',
+    'SeoulNamsabB',
+    'SeoulHangangB',
+    '경기천년제목_Light',
+    '경기천년제목_Medium',
+  ];
+
+  final themeItems = const [
+    {'label': '시스템', 'mode': ThemeMode.system},
+    {'label': '라이트', 'mode': ThemeMode.light},
+    {'label': '다크', 'mode': ThemeMode.dark},
+  ];
+
+  late ThemeMode _selectedTheme;
+  late String _selectedFont;
 
   @override
   void initState() {
-    // _selectedFontTextStyle.
+    super.initState();
+
     textContent1.text = controller.setting_font_size.toString();
     textContent2.text = controller.setting_view_font_size.toString();
     textContent3.text = controller.setting_line_size.toString();
 
-    super.initState();
+    _selectedTheme = themeCtrl.themeMode.value;
+    _selectedFont = controller.setting_font;
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-        insetPadding: const EdgeInsets.all(5),
-        contentPadding: const EdgeInsets.all(5),
-        content: SingleChildScrollView(
-            child: Column(children: [
-              SizedBox(width:MediaQuery.of(context).size.width, height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  const SizedBox(
-                    width: 20,
-                  ),
-                  const Text('font', style: TextStyle(fontSize: 12)),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  DropdownButton<String>(
-                    value: controller.setting_font,
-                    items: items_font.map((String item) {
-                      return DropdownMenuItem<String>(
-                        value: item,
-                        child: Text(item, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blue)),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      controller.setting_font = newValue!;
-                      setState(() {
-                        _selectedFontTextStyle = TextStyle(fontFamily: newValue);
-                      });
-                    },
-                  ),
-                ],
-              ),
-              SizedBox(width:MediaQuery.of(context).size.width, height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  const SizedBox(
-                    width: 20,
-                  ),
-                  SizedBox(
-                    width: 90.0,
-                    child: TextFormField(
-                      keyboardType: TextInputType.number,
-                      inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
-                      decoration: InputDecoration(
-                        isDense: true,
-                        contentPadding: const EdgeInsets.fromLTRB(20.0, 1.0, 20.0, 11.0),
-                        labelText: 'size',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20.0),
-                        ),
-                      ),
-                      controller: textContent1,
-                      maxLines: 1,
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  SizedBox(
-                    width: 90.0,
-                    child: TextFormField(
-                      keyboardType: TextInputType.number,
-                      inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
-                      decoration: InputDecoration(
-                        isDense: true,
-                        contentPadding: const EdgeInsets.fromLTRB(20.0, 1.0, 20.0, 11.0),
-                        labelText: 'v size',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20.0),
-                        ),
-                      ),
-                      controller: textContent2,
-                      maxLines: 1,
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  SizedBox(
-                    width: 90.0,
-                    child: TextFormField(
-                      keyboardType: TextInputType.number,
-                      inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
-                      decoration: InputDecoration(
-                        isDense: true,
-                        contentPadding: const EdgeInsets.fromLTRB(20.0, 1.0, 20.0, 11.0),
-                        labelText: 'l size',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20.0),
-                        ),
-                      ),
-                      controller: textContent3,
-                      maxLines: 1,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 30,
-              ),
-              Row(
-                children: [
-                  const SizedBox(
-                    width: 20,
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      final googleSignIn = GoogleSignIn();
+      insetPadding: const EdgeInsets.all(5),
+      contentPadding: const EdgeInsets.all(5),
+      content: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
 
-                      await googleSignIn.signOut();      // 구글 로그아웃
-                      await FirebaseAuth.instance.signOut();
-                      SystemNavigator.pop();
-                    },
-                    child: const Text('login out', style: TextStyle(fontSize: 12)),
-                  ),
-                  const SizedBox(
-                    width: 20,
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      final themeCtrl = Get.find<ThemeController>();
-                      themeCtrl.setFont(controller.setting_font); // ⭐⭐⭐ 이 줄이 핵심
+            /// 🔹 THEME (미리보기만)
+            Row(
+              children: [
+                const SizedBox(width: 20),
+                const Text('theme', style: TextStyle(fontSize: 12)),
+                const SizedBox(width: 10),
+                DropdownButton<ThemeMode>(
+                  value: _selectedTheme,
+                  items: themeItems.map((item) {
+                    return DropdownMenuItem<ThemeMode>(
+                      value: item['mode'] as ThemeMode,
+                      child: Text(item['label'] as String),
+                    );
+                  }).toList(),
+                  onChanged: (mode) {
+                    if (mode == null) return;
+                    setState(() => _selectedTheme = mode);
+                    themeCtrl.setThemeMode(mode); // ✅ 미리보기
+                  },
+                ),
+              ],
+            ),
 
-                      controller.updateSetting(
-                          'font',
-                        controller.setting_font
-                      );
-                      await controller.updateSetting(
-                          'font_size',
-                          textContent1.text
-                      );
+            const SizedBox(height: 10),
 
-                      await controller.updateSetting(
-                          'view_font_size',
-                          textContent2.text
-                      );
+            /// 🔹 FONT (미리보기만)
+            Row(
+              children: [
+                const SizedBox(width: 20),
+                const Text('font', style: TextStyle(fontSize: 12)),
+                const SizedBox(width: 10),
+                DropdownButton<String>(
+                  value: _selectedFont,
+                  items: itemsFont.map((f) {
+                    return DropdownMenuItem(
+                      value: f,
+                      child: Text(f),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setState(() => _selectedFont = v);
+                    themeCtrl.setFont(v); // ✅ 미리보기
+                  },
+                ),
+              ],
+            ),
 
-                      await controller.updateSetting(
-                          'line_size',
-                          textContent3.text
-                      );
+            const SizedBox(height: 20),
 
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('save', style: TextStyle(fontSize: 12)),
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 30,
-              ),
-            ])));
+            /// 🔹 SIZE
+            Row(
+              children: [
+                const SizedBox(width: 20),
+                _numField(textContent1, 'size'),
+                const SizedBox(width: 10),
+                _numField(textContent2, 'v size'),
+                const SizedBox(width: 10),
+                _numField(textContent3, 'l size'),
+              ],
+            ),
+
+            const SizedBox(height: 30),
+
+            /// 🔹 BUTTONS
+            Row(
+              children: [
+                const SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    await GoogleSignIn().signOut();
+                    await FirebaseAuth.instance.signOut();
+                    SystemNavigator.pop();
+                  },
+                  child: const Text('logout', style: TextStyle(fontSize: 12)),
+                ),
+                const SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    // ✅ 여기서만 저장
+                    await controller.updateSetting(
+                        'theme', _selectedTheme.name);
+                    await controller.updateSetting(
+                        'font', _selectedFont);
+                    await controller.updateSetting(
+                        'font_size', textContent1.text);
+                    await controller.updateSetting(
+                        'view_font_size', textContent2.text);
+                    await controller.updateSetting(
+                        'line_size', textContent3.text);
+
+                    Navigator.pop(context);
+                  },
+                  child: const Text('save', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _numField(TextEditingController c, String label) {
+    return SizedBox(
+      width: 90,
+      child: TextFormField(
+        controller: c,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        decoration: InputDecoration(
+          isDense: true,
+          labelText: label,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+      ),
+    );
   }
 }
