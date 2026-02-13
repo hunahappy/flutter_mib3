@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-import '../main.dart';
-
 class MmemoView extends StatelessWidget {
-  const MmemoView({Key? key}) : super(key: key);
+  const MmemoView({super.key});
 
   @override
   Widget build(BuildContext context) {

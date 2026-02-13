@@ -1,11 +1,7 @@
-import 'dart:async';
 import 'dart:convert';
 import 'package:mib3/form/setting.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:get/get.dart';
 import '../comm/mib3_controller.dart';
-import 'package:mib3/comm/app_database.dart';
-import 'package:mib3/comm/mib3_controller.dart';
 
 import 'package:flutter/material.dart';
 

@@ -5,10 +5,9 @@ import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../comm/mib3_controller.dart';
-import '../main.dart';
 
 class Msetting extends StatefulWidget {
-  const Msetting({Key? key}) : super(key: key);
+  const Msetting({super.key});
 
   @override
   State<Msetting> createState() => _MsettingState();

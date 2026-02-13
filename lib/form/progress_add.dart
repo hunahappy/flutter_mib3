@@ -5,9 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:mib3/form/progress_sub_add.dart';
 
-import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
-import '../main.dart';
 
 class MprogressAdd extends StatefulWidget {
   const MprogressAdd({super.key});

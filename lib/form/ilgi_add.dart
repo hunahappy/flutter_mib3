@@ -4,13 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
-import '../main.dart';
 import 'cal.dart';
 
 class MilgiAdd extends StatefulWidget {
-  const MilgiAdd({Key? key}) : super(key: key);
+  const MilgiAdd({super.key});
 
   @override
   State<MilgiAdd> createState() => _MilgiAddState();
@@ -149,7 +147,6 @@ class _MilgiAddState extends State<MilgiAdd> {
                                             } else {
                                               show_toast("no data", context);
                                             }
-                                            Navigator.of(context).pop();
                                           }
                                       ),
                                     ],

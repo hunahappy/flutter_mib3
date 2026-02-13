@@ -4,13 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
-import '../main.dart';
 import 'cal.dart';
 
 class MhalAdd extends StatefulWidget {
-  const MhalAdd({Key? key}) : super(key: key);
+  const MhalAdd({super.key});
 
   @override
   State<MhalAdd> createState() => _MhalAddState();
@@ -177,8 +175,6 @@ class _MhalAddState extends State<MhalAdd> {
                                         } else {
                                           show_toast("no data", context);
                                         }
-
-                                        Navigator.of(context).pop();
                                       }
                                   ),
                                 ],
@@ -201,7 +197,6 @@ class _MhalAddState extends State<MhalAdd> {
                                   'input_date': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}
                                 )
                             );
-                            Navigator.of(context).pop();
                           } else {
                             await controller.updateItem(
                                 controller.temp_data["id"],

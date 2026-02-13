@@ -1,13 +1,10 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
-import '../main.dart';
 import 'ilgi_add.dart';
 
 class Milgi extends StatefulWidget {

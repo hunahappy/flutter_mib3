@@ -1,11 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:get/get.dart';
-import 'package:uuid/uuid.dart';
 
-import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
 import 'package:intl/intl.dart';
 
