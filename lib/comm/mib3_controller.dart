@@ -21,36 +21,17 @@ class ThemeController extends GetxController {
     themeMode.value = mode;
   }
 
-  ThemeData get lightTheme => ThemeData(
-    brightness: Brightness.light,
-    fontFamily: fontFamily.value,
-  );
+  ThemeData get lightTheme =>
+      ThemeData(brightness: Brightness.light, fontFamily: fontFamily.value);
 
-  ThemeData get darkTheme => ThemeData(
-    brightness: Brightness.dark,
-    fontFamily: fontFamily.value,
-  );
+  ThemeData get darkTheme =>
+      ThemeData(brightness: Brightness.dark, fontFamily: fontFamily.value);
 }
 
 /// =====================
 /// Offline Sync
 /// =====================
 enum SyncAction { add, update, delete }
-
-class SyncQueueItem {
-  final String id;
-  final String collection;
-  final SyncAction action;
-  final Map<String, dynamic>? data;
-
-  SyncQueueItem({
-    required this.id,
-    required this.collection,
-    required this.action,
-    this.data,
-  });
-}
-
 
 ThemeMode _parseTheme(String v) {
   switch (v) {
@@ -86,14 +67,13 @@ class Mib3Controller extends GetxController {
 
   var temp_data = <String, dynamic>{'id': 'new'};
   var sub_temp_data = <String, dynamic>{'id': 'new'};
+
   // =====================
   // Observable
   // =====================
   final items = <Mib3Data>[].obs;
   final items_jin = <MibWithLastSubDate>[].obs;
   final subs = <Mib3SubData>[].obs;
-
-  final _syncQueue = <SyncQueueItem>[];
 
   Mib3Controller(this.db);
 
@@ -121,8 +101,6 @@ class Mib3Controller extends GetxController {
     });
   }
 
-
-
   Future<void> _resetAll() async {
     print('🧹 RESET ALL START');
     // 1️⃣ 로컬 DB 전체 삭제
@@ -136,9 +114,6 @@ class Mib3Controller extends GetxController {
 
     temp_data = <String, dynamic>{'id': 'new'};
     sub_temp_data = <String, dynamic>{'id': 'new'};
-
-    // 4️⃣ 오프라인 동기화 큐 초기화
-    _syncQueue.clear();
 
     print('🧹 RESET ALL DONE');
   }
@@ -217,24 +192,24 @@ class Mib3Controller extends GetxController {
         .collection('mib3')
         .snapshots()
         .listen((snap) async {
-      for (final c in snap.docChanges) {
-        final d = c.doc.data();
-        if (d == null) continue;
+          for (final c in snap.docChanges) {
+            final d = c.doc.data();
+            if (d == null) continue;
 
-        final row = Mib3Companion(
-          id: drift.Value(c.doc.id),
-          tb: drift.Value(d['tb']),
-          wan: drift.Value(d['wan']),
-          content: drift.Value(d['content']),
-        );
+            final row = Mib3Companion(
+              id: drift.Value(c.doc.id),
+              tb: drift.Value(d['tb']),
+              wan: drift.Value(d['wan']),
+              content: drift.Value(d['content']),
+            );
 
-        if (c.type == DocumentChangeType.removed) {
-          await db.deleteRow(c.doc.id);
-        } else {
-          await db.insertRow(row);
-        }
-      }
-    });
+            if (c.type == DocumentChangeType.removed) {
+              await db.deleteRow(c.doc.id);
+            } else {
+              await db.insertRow(row);
+            }
+          }
+        });
   }
 
   void _syncMib3SubFromFirebase() {
@@ -246,24 +221,24 @@ class Mib3Controller extends GetxController {
         .collection('mib3_sub')
         .snapshots()
         .listen((snap) async {
-      for (final c in snap.docChanges) {
-        final d = c.doc.data();
-        if (d == null) continue;
+          for (final c in snap.docChanges) {
+            final d = c.doc.data();
+            if (d == null) continue;
 
-        final row = Mib3SubCompanion(
-          id: drift.Value(c.doc.id),
-          masterId: drift.Value(d['masterId']),
-          sdate: drift.Value(d['sdate']),
-          content: drift.Value(d['content']),
-        );
+            final row = Mib3SubCompanion(
+              id: drift.Value(c.doc.id),
+              masterId: drift.Value(d['masterId']),
+              sdate: drift.Value(d['sdate']),
+              content: drift.Value(d['content']),
+            );
 
-        if (c.type == DocumentChangeType.removed) {
-          await db.deleteSub(c.doc.id);
-        } else {
-          await db.insertSub(row);
-        }
-      }
-    });
+            if (c.type == DocumentChangeType.removed) {
+              await db.deleteSub(c.doc.id);
+            } else {
+              await db.insertSub(row);
+            }
+          }
+        });
   }
 
   // =====================
@@ -279,48 +254,26 @@ class Mib3Controller extends GetxController {
 
     // 1️⃣ 로컬 DB
     await db.insertRow(
-      Mib3Companion.insert(
-        id: id,
-        tb: tb,
-        wan: wan,
-        content: content,
-      ),
+      Mib3Companion.insert(id: id, tb: tb, wan: wan, content: content),
     );
 
     // 2️⃣ Firebase
-    try {
+
       await firestore
           .collection('users')
           .doc(uid)
           .collection('mib3')
           .doc(id)
-          .set({
-        'tb': tb,
-        'wan': wan,
-        'content': content,
-      });
-    } catch (e) {
-      _syncQueue.add(
-        SyncQueueItem(
-          id: id,
-          collection: 'mib3',
-          action: SyncAction.add,
-          data: {
-            'tb': tb,
-            'wan': wan,
-            'content': content,
-          },
-        ),
-      );
-    }
+          .set({'tb': tb, 'wan': wan, 'content': content});
+
   }
 
   Future<void> updateItem(
-      String id,
-      String tb,
-      String wan,
-      String content,
-      ) async {
+    String id,
+    String tb,
+    String wan,
+    String content,
+  ) async {
     if (uid == null) {
       print('❌ updateItem 실패: 로그인 안됨');
       return;
@@ -337,32 +290,13 @@ class Mib3Controller extends GetxController {
     );
 
     // 2️⃣ Firebase 업데이트
-    try {
       await firestore
           .collection('users')
           .doc(uid)
           .collection('mib3')
           .doc(id)
-          .update({
-        'tb': tb,
-        'wan': wan,
-        'content': content,
-      });
-    } catch (_) {
-      // 3️⃣ 실패 시 오프라인 큐
-      _syncQueue.add(
-        SyncQueueItem(
-          id: id,
-          collection: 'mib3',
-          action: SyncAction.update,
-          data: {
-            'tb': tb,
-            'wan': wan,
-            'content': content,
-          },
-        ),
-      );
-    }
+          .update({'tb': tb, 'wan': wan, 'content': content});
+
   }
 
   Future<void> removeItem(String id) async {
@@ -373,7 +307,6 @@ class Mib3Controller extends GetxController {
     await db.deleteSubsByMaster(id);
 
     // 2️⃣ Firebase 삭제
-    try {
       await firestore
           .collection('users')
           .doc(uid)
@@ -392,17 +325,7 @@ class Mib3Controller extends GetxController {
       for (final d in qs.docs) {
         await d.reference.delete();
       }
-    } catch (_) {
-      _syncQueue.add(
-        SyncQueueItem(
-          id: id,
-          collection: 'mib3',
-          action: SyncAction.delete,
-        ),
-      );
-    }
   }
-
 
   // =====================
   // mib3_sub CRUD
@@ -426,29 +349,16 @@ class Mib3Controller extends GetxController {
         .doc(uid)
         .collection('mib3_sub')
         .doc(id)
-        .set({
-      'masterId': masterId,
-      'sdate': sdate,
-      'content': content,
-    });
+        .set({'masterId': masterId, 'sdate': sdate, 'content': content});
   }
 
-  Future<void> updateSub(
-      String id,
-        String sdate,
-        String content,
-      ) async {
+  Future<void> updateSub(String id, String sdate, String content) async {
     if (uid == null) return;
 
     // 1️⃣ 로컬 DB
-    await db.updateSub(
-      id: id,
-      sdate: sdate,
-      content: content,
-    );
+    await db.updateSub(id: id, sdate: sdate, content: content);
 
     // 2️⃣ Firebase
-    try {
       final data = <String, dynamic>{};
       if (sdate != null) data['sdate'] = sdate;
       if (content != null) data['content'] = content;
@@ -459,19 +369,6 @@ class Mib3Controller extends GetxController {
           .collection('mib3_sub')
           .doc(id)
           .update(data);
-    } catch (_) {
-      _syncQueue.add(
-        SyncQueueItem(
-          id: id,
-          collection: 'mib3_sub',
-          action: SyncAction.update,
-          data: {
-            if (sdate != null) 'sdate': sdate,
-            if (content != null) 'content': content,
-          },
-        ),
-      );
-    }
   }
 
   Future<void> removeSub(String id) async {
@@ -481,22 +378,12 @@ class Mib3Controller extends GetxController {
     await db.deleteSub(id);
 
     // 2️⃣ Firebase
-    try {
       await firestore
           .collection('users')
           .doc(uid)
           .collection('mib3_sub')
           .doc(id)
           .delete();
-    } catch (_) {
-      _syncQueue.add(
-        SyncQueueItem(
-          id: id,
-          collection: 'mib3_sub',
-          action: SyncAction.delete,
-        ),
-      );
-    }
   }
 
   Future<void> removeByMasterSub(String masterId) async {
@@ -506,7 +393,6 @@ class Mib3Controller extends GetxController {
     await db.deleteSubsByMaster(masterId);
 
     // 2️⃣ Firebase – 해당 masterId 가진 sub 전부 삭제
-    try {
       final qs = await firestore
           .collection('users')
           .doc(uid)
@@ -517,16 +403,6 @@ class Mib3Controller extends GetxController {
       for (final doc in qs.docs) {
         await doc.reference.delete();
       }
-    } catch (_) {
-      // 3️⃣ 실패 시 오프라인 큐
-      _syncQueue.add(
-        SyncQueueItem(
-          id: masterId,
-          collection: 'mib3_sub',
-          action: SyncAction.delete,
-        ),
-      );
-    }
   }
 }
 
@@ -534,8 +410,7 @@ class Mib3Controller extends GetxController {
 /// Utils
 /// =====================
 void show_toast(String msg, context) {
-  showToast(msg,
-      context: context, position: StyledToastPosition.top);
+  showToast(msg, context: context, position: StyledToastPosition.top);
 }
 
 String get_date_yo(String pDate) {
@@ -545,16 +420,20 @@ String get_date_yo(String pDate) {
 
 int get_date_term2(String pDate) {
   if (pDate.length < 10) return 0;
-  return DateTime.parse(pDate)
-      .difference(DateTime.now())
-      .inDays *
-      -1;
+  return DateTime.parse(pDate).difference(DateTime.now()).inDays * -1;
 }
 
 int get_term_day(String date_1, String date_2) {
-  var date_now = DateTime(int.parse(date_1.substring(0, 4)), int.parse(date_1.substring(5, 7)), int.parse(date_1.substring(8, 10)));
-  var date_last = DateTime(int.parse(date_2.substring(0, 4)), int.parse(date_2.substring(5, 7)), int.parse(date_2.substring(8, 10)));
+  var date_now = DateTime(
+    int.parse(date_1.substring(0, 4)),
+    int.parse(date_1.substring(5, 7)),
+    int.parse(date_1.substring(8, 10)),
+  );
+  var date_last = DateTime(
+    int.parse(date_2.substring(0, 4)),
+    int.parse(date_2.substring(5, 7)),
+    int.parse(date_2.substring(8, 10)),
+  );
 
   return date_now.difference(date_last).inDays;
 }
-
