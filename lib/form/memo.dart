@@ -153,19 +153,24 @@ class _MmemoState extends State<Mmemo> {
         children: [
           Expanded(
             child: Obx(() {
+              final cache = <dynamic, Map<String, dynamic>>{};
+              Map<String, dynamic> getDecodedContent(dynamic item) {
+                return cache.putIfAbsent(item, () => jsonDecode(item.content));
+              }
+
               var filtered = controller.items
                   .where(
                     (item) =>
                         item.tb == "메모" &&
                         item.wan == _wan_flag &&
-                        jsonDecode(item.content)['jong'].toString() == _jong_flag,
+                        getDecodedContent(item)['jong'].toString() == _jong_flag,
                   )
                   .toList();
 
               if (textSearch.text.isNotEmpty) {
                 filtered = filtered
                     .where(
-                      (item) => jsonDecode(item.content)['content1']
+                      (item) => getDecodedContent(item)['content1']
                           .toString()
                           .toLowerCase()
                           .contains(textSearch.text.toLowerCase()),
@@ -176,7 +181,7 @@ class _MmemoState extends State<Mmemo> {
               if (_sort_flag) {
                 filtered.sort((a, b) => b.id.compareTo(a.id));
               } else {
-                filtered.sort((a, b) => jsonDecode(a.content)['content1'].compareTo(jsonDecode(b.content)['content1']));
+                filtered.sort((a, b) => getDecodedContent(a)['content1'].compareTo(getDecodedContent(b)['content1']));
               }
 
               return ListView.builder(
@@ -185,6 +190,7 @@ class _MmemoState extends State<Mmemo> {
                 itemCount: filtered.length,
                 itemBuilder: (_, index) {
                   final item = filtered[index];
+                  final content = getDecodedContent(item);
                   return Card(
                     elevation: 7,
                     child: ListTile(
@@ -192,7 +198,7 @@ class _MmemoState extends State<Mmemo> {
                       title: Transform.translate(
                         offset: const Offset(0, 0),
                         child: Text(
-                          jsonDecode(item.content)['content1'],
+                          content['content1'],
                           maxLines: controller.setting_line_size.toInt(),
                           overflow: TextOverflow.fade,
                           style: TextStyle(
@@ -212,9 +218,9 @@ class _MmemoState extends State<Mmemo> {
                         controller.temp_data = <String, dynamic>{
                           "id": item.id,
                           "wan": item.wan,
-                          "jong": jsonDecode(item.content)['jong'].toString(),
-                          "content1": jsonDecode(item.content)['content1'],
-                          "content2": jsonDecode(item.content)['content2'],
+                          "jong": content['jong'].toString(),
+                          "content1": content['content1'],
+                          "content2": content['content2'],
                         };
                         await showDialog(
                           context: context,
@@ -229,17 +235,15 @@ class _MmemoState extends State<Mmemo> {
                           final s_data = <String, dynamic>{
                             "view_font_size": controller.setting_view_font_size
                                 .toInt(),
-                            "content1": jsonDecode(filtered[index_move].content)['content1'],
+                            "content1": getDecodedContent(filtered[index_move])['content1'],
                           };
 
                           var return_value = await Get.toNamed('/r/memo_view', arguments: s_data);
 
-                          print(index_move);
-
                           if (return_value != null) {
                             if (return_value < 0) {
                               index_move++;
-                              if (index_move > filtered.length) {
+                              if (index_move >= filtered.length) {
                                 break;
                               }
                             } else {

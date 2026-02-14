@@ -100,27 +100,28 @@ class _MhalState extends State<Mhal> {
         children: [
           Expanded(
             child: Obx(() {
+              final cache = <dynamic, Map<String, dynamic>>{};
+              Map<String, dynamic> getDecodedContent(dynamic item) {
+                return cache.putIfAbsent(item, () => jsonDecode(item.content));
+              }
+
               var filtered = controller.items
                   .where((item) => item.tb == "할일" && item.wan == _wan_flag)
                   .toList();
 
               if (_date_flag != "") {
                 filtered = filtered
-                    .where((item) => jsonDecode(item.content)['s_date'].toString().compareTo(_date_flag.substring(0,10)) <= 0)
+                    .where((item) => getDecodedContent(item)['s_date'].toString().compareTo(_date_flag.substring(0,10)) <= 0)
                     .toList();
               }
 
               if (_sort_flag) {
                 filtered.sort(
-                      (a, b) => jsonDecode(
-                    a.content,
-                  )['s_date'].compareTo(jsonDecode(b.content)['s_date']),
+                      (a, b) => getDecodedContent(a)['s_date'].compareTo(getDecodedContent(b)['s_date']),
                 );
               } else {
                 filtered.sort(
-                  (a, b) => jsonDecode(
-                    a.content,
-                  )['content1'].compareTo(jsonDecode(b.content)['content1']),
+                  (a, b) => getDecodedContent(a)['content1'].compareTo(getDecodedContent(b)['content1']),
                 );
               }
 
@@ -130,6 +131,7 @@ class _MhalState extends State<Mhal> {
                 itemCount: filtered.length,
                 itemBuilder: (_, index) {
                   final item = filtered[index];
+                  final content = getDecodedContent(item);
                   return Card(
                     elevation: 7,
                     child: ListTile(
@@ -137,7 +139,7 @@ class _MhalState extends State<Mhal> {
                       title: Transform.translate(
                         offset: const Offset(0, 0),
                         child: Text(
-                          "  ${jsonDecode(item.content)["s_date"].toString()}(${get_date_yo(jsonDecode(item.content)["s_date"])})\n${jsonDecode(item.content)["content1"]}",
+                          "  ${content['s_date'].toString()}(${get_date_yo(content['s_date'])})\n${content['content1']}",
                           maxLines: controller.setting_line_size,
                           overflow: TextOverflow.fade,
                           style:
@@ -145,7 +147,7 @@ class _MhalState extends State<Mhal> {
                         ),
                       ),
                       trailing: Text(
-                        "${get_date_term2(jsonDecode(item.content)["s_date"].toString())*-1+1}일 남음",
+                        "${get_date_term2(content['s_date'].toString()) * -1 + 1}일 남음",
                         style: const TextStyle(
                             fontSize: 10, color: Colors.blueAccent),
                       ),
@@ -154,9 +156,9 @@ class _MhalState extends State<Mhal> {
                         controller.temp_data = <String, dynamic>{
                           "id": item.id,
                           "wan": item.wan,
-                          "s_date": jsonDecode(item.content)['s_date'],
-                          "content1": jsonDecode(item.content)['content1'],
-                          "content2": jsonDecode(item.content)['content2'],
+                          "s_date": content['s_date'],
+                          "content1": content['content1'],
+                          "content2": content['content2'],
                         };
                         await showDialog(
                           context: context,
@@ -169,7 +171,7 @@ class _MhalState extends State<Mhal> {
                         final s_data = <String, dynamic>{
                           "view_font_size": controller.setting_view_font_size
                               .toInt(),
-                          "content1": jsonDecode(item.content)['content1'],
+                          "content1": content['content1'],
                         };
 
                         await Get.toNamed('/r/memo_view', arguments: s_data);

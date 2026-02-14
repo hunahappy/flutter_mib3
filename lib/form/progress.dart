@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:mib3/form/progress_add.dart';
 
 import '../comm/mib3_controller.dart';
+import 'cal.dart';
 
 class Mprogress extends StatefulWidget {
   const Mprogress({super.key});
@@ -84,21 +85,22 @@ class _MprogressState extends State<Mprogress> {
         children: [
           Expanded(
             child: Obx(() {
+              final cache = <dynamic, Map<String, dynamic>>{};
+              Map<String, dynamic> getDecodedContent(dynamic item) {
+                return cache.putIfAbsent(item, () => jsonDecode(item.content));
+              }
+
               var filtered = controller.items_jin
                   .where((item) => item.memo.tb == "진행" && item.memo.wan == _wan_flag)
                   .toList();
 
               if (_sort_flag) {
                 filtered.sort(
-                      (a, b) => jsonDecode(
-                    a.memo.content,
-                  )['content1'].compareTo(jsonDecode(b.memo.content)['content1']),
+                      (a, b) => getDecodedContent(a.memo)['content1'].compareTo(getDecodedContent(b.memo)['content1']),
                 );
               } else {
                 filtered.sort(
-                      (a, b) => jsonDecode(
-                    a.memo.content,
-                  )['content1'].compareTo(jsonDecode(b.memo.content)['content1']),
+                      (a, b) => getDecodedContent(a.memo)['content1'].compareTo(getDecodedContent(b.memo)['content1']),
                 );
               }
 
@@ -108,6 +110,7 @@ class _MprogressState extends State<Mprogress> {
                 itemCount: filtered.length,
                 itemBuilder: (_, index) {
                   final item = filtered[index];
+                  final content = getDecodedContent(item.memo);
                   return Card(
                     elevation: 7,
                     clipBehavior: Clip.antiAlias, // 중요
@@ -115,7 +118,7 @@ class _MprogressState extends State<Mprogress> {
                       dense: true,
                       title: Transform.translate(
                         offset: const Offset(0, 0),
-                        child: Text(jsonDecode(item.memo.content)["content1"],
+                        child: Text(content["content1"],
                           maxLines: controller.setting_line_size,
                           overflow: TextOverflow.fade,
                           style:
@@ -132,8 +135,8 @@ class _MprogressState extends State<Mprogress> {
                         controller.temp_data = <String, dynamic>{
                           "id": item.memo.id,
                           "wan": item.memo.wan,
-                          "content1": jsonDecode(item.memo.content)['content1'],
-                          "content2": jsonDecode(item.memo.content)['content2'],
+                          "content1": content['content1'],
+                          "content2": content['content2'],
                         };
                         await showDialog(
                           context: context,
@@ -150,14 +153,14 @@ class _MprogressState extends State<Mprogress> {
 
                         String data_sub = "";
                         for (var element in filtered) {
-                          var row = jsonDecode(element.content);
+                          var row = getDecodedContent(element);
                           data_sub = "$data_sub ${element.sdate}(${get_date_yo(element.sdate)})\n" + row["content1"] + "\n" + row["content2"]+ "\n\n";
                         }
 
                         final s_data = <String, dynamic>{
                           "view_font_size": controller.setting_view_font_size
                               .toInt(),
-                          "content1": jsonDecode(item.memo.content)['content1']+"\n\n"+data_sub,
+                          "content1": content['content1']+"\n\n"+data_sub,
                         };
 
                         await Get.toNamed('/r/memo_view', arguments: s_data);

@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../comm/mib3_controller.dart';
+import 'cal.dart';
 import 'ilgi_add.dart';
 
 class Milgi extends StatefulWidget {
@@ -127,6 +128,11 @@ class _MilgiState extends State<Milgi> {
         children: [
           Expanded(
             child: Obx(() {
+              final cache = <dynamic, Map<String, dynamic>>{};
+              Map<String, dynamic> getDecodedContent(dynamic item) {
+                return cache.putIfAbsent(item, () => jsonDecode(item.content));
+              }
+
               var filtered = controller.items
                   .where((item) => item.tb == "일기" && item.wan == _wan_flag)
                   .toList();
@@ -134,7 +140,7 @@ class _MilgiState extends State<Milgi> {
               if (textSearch.text.isNotEmpty) {
                 filtered = filtered
                     .where(
-                      (item) => jsonDecode(item.content)['content1']
+                      (item) => getDecodedContent(item)['content1']
                       .toString()
                       .toLowerCase()
                       .contains(textSearch.text.toLowerCase()),
@@ -144,15 +150,11 @@ class _MilgiState extends State<Milgi> {
 
               if (_sort_flag) {
                 filtered.sort(
-                      (a, b) => jsonDecode(
-                    b.content,
-                  )['s_date'].compareTo(jsonDecode(a.content)['s_date']),
+                      (a, b) => getDecodedContent(b)['s_date'].compareTo(getDecodedContent(a)['s_date']),
                 );
               } else {
                 filtered.sort(
-                      (a, b) => jsonDecode(
-                    a.content,
-                  )['content1'].compareTo(jsonDecode(b.content)['content1']),
+                      (a, b) => getDecodedContent(a)['content1'].compareTo(getDecodedContent(b)['content1']),
                 );
               }
 
@@ -162,6 +164,7 @@ class _MilgiState extends State<Milgi> {
                 itemCount: filtered.length,
                 itemBuilder: (_, index) {
                   final item = filtered[index];
+                  final content = getDecodedContent(item);
                   return Card(
                     elevation: 7,
                     child: ListTile(
@@ -169,7 +172,7 @@ class _MilgiState extends State<Milgi> {
                       title: Transform.translate(
                         offset: const Offset(0, 0),
                         child: Text(
-                          "  ${jsonDecode(item.content)["s_date"].toString()}(${get_date_yo(jsonDecode(item.content)["s_date"])})\n${jsonDecode(item.content)["content1"]}",
+                          "  ${content["s_date"].toString()}(${get_date_yo(content["s_date"])})\n${content["content1"]}",
                           maxLines: controller.setting_line_size,
                           overflow: TextOverflow.fade,
                           style:
@@ -180,9 +183,9 @@ class _MilgiState extends State<Milgi> {
                         controller.temp_data = <String, dynamic>{
                           "id": item.id,
                           "wan": item.wan,
-                          "s_date": jsonDecode(item.content)['s_date'],
-                          "content1": jsonDecode(item.content)['content1'],
-                          "content2": jsonDecode(item.content)['content2'],
+                          "s_date": content['s_date'],
+                          "content1": content['content1'],
+                          "content2": content['content2'],
                         };
                         await showDialog(
                           context: context,
