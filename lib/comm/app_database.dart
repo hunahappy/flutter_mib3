@@ -4,7 +4,6 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'tables.dart';
-import 'package:uuid/uuid.dart';
 
 part 'app_database.g.dart';
 
@@ -103,39 +102,61 @@ class AppDatabase extends _$AppDatabase {
   Future<List<Mib3SubData>> watchSubsAll() => select(mib3Sub).get();
   Stream<List<Mib3SubData>> watchSubAll() => select(mib3Sub).watch();
 
+  // Stream<List<MibWithLastSubDate>> watchJinWithLastSubDate() {
+  //   return (select(mib3)
+  //     ..where((t) => t.tb.equals('진행')))
+  //       .watch()
+  //       .asyncMap((memos) async {
+  //     final list = <MibWithLastSubDate>[];
+  //
+  //     for (final memo in memos) {
+  //       final lastSub = await (select(mib3Sub)
+  //         ..where((t) => t.masterId.equals(memo.id))
+  //         ..orderBy([
+  //               (t) => OrderingTerm(
+  //             expression: t.sdate,
+  //             mode: OrderingMode.desc,
+  //           )
+  //         ])
+  //         ..limit(1))
+  //           .getSingleOrNull();
+  //
+  //       list.add(
+  //         MibWithLastSubDate(
+  //           memo: memo,               // mib3의 모든 컬럼
+  //           lastSubDate: lastSub?.sdate, // 마지막 sub 날짜
+  //         ),
+  //       );
+  //     }
+  //
+  //     return list;
+  //   });
+  // }
+
   Stream<List<MibWithLastSubDate>> watchJinWithLastSubDate() {
-    return (select(mib3)
-      ..where((t) => t.tb.equals('진행')))
-        .watch()
-        .asyncMap((memos) async {
-      final list = <MibWithLastSubDate>[];
+    return customSelect(
+      '''
+    SELECT
+      m.*,
+      MAX(s.sdate) AS last_sub_date
+    FROM mib3 m
+    LEFT JOIN mib3_sub s ON s.master_id = m.id
+    WHERE m.tb = '진행'
+    GROUP BY m.id
+    ''',
+      readsFrom: {mib3, mib3Sub},
+    ).watch().map((rows) {
+      return rows.map((row) {
+        final lastSubDateStr = row.read<String?>('last_sub_date');
 
-      for (final memo in memos) {
-        final lastSub = await (select(mib3Sub)
-          ..where((t) => t.masterId.equals(memo.id))
-          ..orderBy([
-                (t) => OrderingTerm(
-              expression: t.sdate,
-              mode: OrderingMode.desc,
-            )
-          ])
-          ..limit(1))
-            .getSingleOrNull();
-
-        list.add(
-          MibWithLastSubDate(
-            memo: memo,               // mib3의 모든 컬럼
-            lastSubDate: lastSub?.sdate, // 마지막 sub 날짜
-          ),
+        return MibWithLastSubDate(
+          memo: mib3.map(row.data),
+          lastSubDate: lastSubDateStr, // 이미 yyyy-MM-dd
+          // 또는 필요하면 DateTime.parse(lastSubDateStr!)
         );
-      }
-
-      return list;
+      }).toList();
     });
   }
-
-
-
 
   Future<void> insertSub(Mib3SubCompanion row) {
     return into(mib3Sub).insert(row, mode: InsertMode.insertOrReplace);

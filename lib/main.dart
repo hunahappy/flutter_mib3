@@ -51,6 +51,7 @@ void main() async {
   final db = AppDatabase();
   Get.put(Mib3Controller(db), permanent: true);
 
+
   runApp(const MyApp());
 }
 
