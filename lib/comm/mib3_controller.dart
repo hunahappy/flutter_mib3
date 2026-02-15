@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -68,14 +70,185 @@ class Mib3Controller extends GetxController {
   var temp_data = <String, dynamic>{'id': 'new'};
   var sub_temp_data = <String, dynamic>{'id': 'new'};
 
-  // =====================
-  // Observable
-  // =====================
-  final items = <Mib3Data>[].obs;
-  final items_jin = <MibWithLastSubDate>[].obs;
-  final subs = <Mib3SubData>[].obs;
-
   Mib3Controller(this.db);
+
+  // 🔥 JSON decode 캐시 (build 아님, controller 수명)
+  final Map<String, Map<String, dynamic>> _jsonCache = {};
+  final Map<String, Map<String, dynamic>> _jsonCacheSub = {};
+
+  Map<String, dynamic> decode(Mib3Data item) {
+    return _jsonCache.putIfAbsent(
+      item.id,
+          () => jsonDecode(item.content),
+    );
+  }
+
+  Map<String, dynamic> decodeSub(Mib3SubData row) {
+    return _jsonCacheSub.putIfAbsent(
+      row.id,
+          () => jsonDecode(row.content),
+    );
+  }
+
+  Stream<List<Mib3Data>> watchMemo({
+    required String wanFlag,
+    required String jongFlag,
+    required bool sortById,
+    required String searchText,
+  }) {
+    final query = db.select(db.mib3) // ← 여기 db. 붙이기
+      ..where((tbl) => tbl.tb.equals('메모') & tbl.wan.equals(wanFlag));
+
+    return query.watch().map((rows) {
+      var filtered = rows.where((item) {
+        final decoded = jsonDecode(item.content);
+        if (decoded['jong'].toString() != jongFlag) return false;
+        if (searchText.isNotEmpty && !decoded['content1'].toString().toLowerCase().contains(searchText.toLowerCase())) return false;
+        return true;
+      }).toList();
+
+      filtered.sort((a, b) => sortById
+          ? b.id.compareTo(a.id)
+          : jsonDecode(a.content)['content1'].compareTo(jsonDecode(b.content)['content1']));
+      return filtered;
+    });
+  }
+
+  Stream<List<Mib3Data>> watchDiary({
+    required String wanFlag,
+    required bool sortByDateDesc,
+    String searchText = '',
+  }) {
+    final query = db.select(db.mib3)
+      ..where((tbl) => tbl.tb.equals('일기') & tbl.wan.equals(wanFlag));
+
+    return query.watch().map((rows) {
+      final cache = <String, Map<String, dynamic>>{};
+
+      Map<String, dynamic> decode(Mib3Data item) {
+        return cache.putIfAbsent(item.id, () => jsonDecode(item.content));
+      }
+
+      // 검색 필터
+      var list = rows;
+      if (searchText.isNotEmpty) {
+        final q = searchText.toLowerCase();
+        list = list.where((e) => decode(e)['content1'].toString().toLowerCase().contains(q)).toList();
+      }
+
+      // 정렬
+      if (sortByDateDesc) {
+        list.sort((a, b) => decode(b)['s_date'].compareTo(decode(a)['s_date']));
+      } else {
+        list.sort((a, b) => decode(a)['content1'].compareTo(decode(b)['content1']));
+      }
+
+      return list;
+    });
+  }
+
+
+
+  Stream<List<Mib3Data>> watchTodo({
+    required String wanFlag,
+    required bool sortByDate,
+    String dateLimit = '',
+  }) {
+    // DB 단계에서 tb와 wan 필터
+    final query = db.select(db.mib3)
+      ..where((tbl) => tbl.tb.equals('할일') & tbl.wan.equals(wanFlag));
+
+    return query.watch().map((rows) {
+      final cache = <String, Map<String, dynamic>>{};
+
+      Map<String, dynamic> decode(Mib3Data item) {
+        return cache.putIfAbsent(item.id, () => jsonDecode(item.content));
+      }
+
+      // dateLimit 필터
+      var list = rows;
+      if (dateLimit.isNotEmpty) {
+        final limit = dateLimit.substring(0, 10);
+        list = list.where(
+              (e) => decode(e)['s_date'].toString().compareTo(limit) <= 0,
+        ).toList();
+      }
+
+      // 정렬
+      if (sortByDate) {
+        list.sort((a, b) => decode(a)['s_date'].compareTo(decode(b)['s_date']));
+      } else {
+        list.sort((a, b) => decode(a)['content1'].compareTo(decode(b)['content1']));
+      }
+
+      return list;
+    });
+  }
+
+
+
+  Stream<List<MibWithLastSubDate>> watchProgress({
+    required String wanFlag,
+    required bool sortByContent,
+  }) {
+    // DB 단계에서 필터: tb='진행' + wanFlag
+    final query = db.customSelect(
+      '''
+    SELECT
+      m.*,
+      MAX(s.sdate) AS last_sub_date
+    FROM mib3 m
+    LEFT JOIN mib3_sub s ON s.master_id = m.id
+    WHERE m.tb = '진행' AND m.wan = ?
+    GROUP BY m.id
+    ''',
+      variables: [drift.Variable(wanFlag)],
+      readsFrom: {db.mib3, db.mib3Sub},
+    );
+
+    return query.watch().map((rows) {
+      final list = rows.map((row) {
+        final lastSubDateStr = row.read<String?>('last_sub_date');
+
+        return MibWithLastSubDate(
+          memo: db.mib3.map(row.data),
+          lastSubDate: lastSubDateStr,
+        );
+      }).toList();
+
+      // sortByContent 옵션
+      list.sort((a, b) {
+        final aContent = decode(a.memo)['content1'];
+        final bContent = decode(b.memo)['content1'];
+
+        return sortByContent
+            ? aContent.compareTo(bContent)
+            : b.memo.id.compareTo(a.memo.id);
+      });
+
+      return list;
+    });
+  }
+
+
+  Future<String> buildSubContent(String memoId) async {
+    final list = await db.getSubsByMaster(memoId);
+
+    final buffer = StringBuffer();
+
+    for (final s in list) {
+      final row = decodeSub(s);
+
+      buffer.writeln(
+        "${s.sdate}(${get_date_yo(s.sdate)})",
+      );
+      buffer.writeln(row['content1']);
+      buffer.writeln(row['content2']);
+      buffer.writeln();
+    }
+
+    return buffer.toString();
+  }
 
   // =====================
   // Init
@@ -84,7 +257,6 @@ class Mib3Controller extends GetxController {
   void onInit() {
     super.onInit();
     loadSettings();
-    _watchLocal();
 
     FirebaseAuth.instance.authStateChanges().listen((user) async {
       if (user == null) {
@@ -107,10 +279,10 @@ class Mib3Controller extends GetxController {
     await db.clearAll();
     // ⬆️ AppDatabase에 clearAll() 함수 필요 (아래 참고)
 
-    // 2️⃣ 메모리 상태 초기화
-    items.clear();
-    items_jin.clear();
-    subs.clear();
+
+    _jsonCache.clear();
+    _jsonCacheSub.clear();
+
 
     temp_data = <String, dynamic>{'id': 'new'};
     sub_temp_data = <String, dynamic>{'id': 'new'};
@@ -169,15 +341,6 @@ class Mib3Controller extends GetxController {
         break;
     }
     update();
-  }
-
-  // =====================
-  // Local Watch
-  // =====================
-  void _watchLocal() {
-    db.watchAll().listen((rows) => items.value = rows);
-    db.watchSubAll().listen((rows) => subs.value = rows);
-    db.watchJinWithLastSubDate().listen((rows) => items_jin.value = rows);
   }
 
   // =====================

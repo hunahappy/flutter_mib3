@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
 import 'cal.dart';
 import 'ilgi_add.dart';
@@ -127,78 +128,64 @@ class _MilgiState extends State<Milgi> {
       body: Column(
         children: [
           Expanded(
-            child: Obx(() {
-              final cache = <dynamic, Map<String, dynamic>>{};
-              Map<String, dynamic> getDecodedContent(dynamic item) {
-                return cache.putIfAbsent(item, () => jsonDecode(item.content));
-              }
+            child: StreamBuilder<List<Mib3Data>>(
+              stream: controller.watchDiary(
+                wanFlag: _wan_flag,
+                sortByDateDesc: _sort_flag,
+                searchText: textSearch.text,
+              ),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              var filtered = controller.items
-                  .where((item) => item.tb == "일기" && item.wan == _wan_flag)
-                  .toList();
+                final filtered = snapshot.data!;
 
-              if (textSearch.text.isNotEmpty) {
-                filtered = filtered
-                    .where(
-                      (item) => getDecodedContent(item)['content1']
-                      .toString()
-                      .toLowerCase()
-                      .contains(textSearch.text.toLowerCase()),
-                )
-                    .toList();
-              }
+                if (filtered.isEmpty) {
+                  return const Center(child: Text('일기 없음'));
+                }
 
-              if (_sort_flag) {
-                filtered.sort(
-                      (a, b) => getDecodedContent(b)['s_date'].compareTo(getDecodedContent(a)['s_date']),
-                );
-              } else {
-                filtered.sort(
-                      (a, b) => getDecodedContent(a)['content1'].compareTo(getDecodedContent(b)['content1']),
-                );
-              }
+                return ListView.builder(
+                  controller: _controller,
+                  padding: const EdgeInsets.all(10),
+                  itemCount: filtered.length,
+                  itemBuilder: (_, index) {
+                    final item = filtered[index];
+                    final content = controller.decode(item);
 
-              return ListView.builder(
-                controller: _controller,
-                padding: const EdgeInsets.all(10),
-                itemCount: filtered.length,
-                itemBuilder: (_, index) {
-                  final item = filtered[index];
-                  final content = getDecodedContent(item);
-                  return Card(
-                    elevation: 7,
-                    child: ListTile(
-                      dense: true,
-                      title: Transform.translate(
-                        offset: const Offset(0, 0),
-                        child: Text(
-                          "  ${content["s_date"].toString()}(${get_date_yo(content["s_date"])})\n${content["content1"]}",
+                    return Card(
+                      elevation: 7,
+                      child: ListTile(
+                        dense: true,
+                        title: Text(
+                          "  ${content["s_date"]}(${get_date_yo(content["s_date"])})\n"
+                              "${content["content1"]}",
                           maxLines: controller.setting_line_size,
                           overflow: TextOverflow.fade,
-                          style:
-                          TextStyle(fontSize: controller.setting_font_size + 0.0),
+                          style: TextStyle(
+                            fontSize: controller.setting_font_size + 0.0,
+                          ),
                         ),
+                        onTap: () async {
+                          controller.temp_data = {
+                            "id": item.id,
+                            "wan": item.wan,
+                            "s_date": content['s_date'],
+                            "content1": content['content1'],
+                            "content2": content['content2'],
+                          };
+
+                          await showDialog(
+                            context: context,
+                            builder: (_) => const MilgiAdd(),
+                          );
+                        },
                       ),
-                      onTap: () async {
-                        controller.temp_data = <String, dynamic>{
-                          "id": item.id,
-                          "wan": item.wan,
-                          "s_date": content['s_date'],
-                          "content1": content['content1'],
-                          "content2": content['content2'],
-                        };
-                        await showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return const MilgiAdd();
-                          },
-                        );
-                      },
-                    ),
-                  );
-                },
-              );
-            }),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),

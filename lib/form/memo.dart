@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:mib3/form/setting.dart';
 import 'package:get/get.dart';
+import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
 
 import 'package:flutter/material.dart';
@@ -152,116 +153,93 @@ class _MmemoState extends State<Mmemo> {
       body: Column(
         children: [
           Expanded(
-            child: Obx(() {
-              final cache = <dynamic, Map<String, dynamic>>{};
-              Map<String, dynamic> getDecodedContent(dynamic item) {
-                return cache.putIfAbsent(item, () => jsonDecode(item.content));
-              }
+            child: StreamBuilder<List<Mib3Data>>(
+              stream: controller.watchMemo(
+                wanFlag: _wan_flag,
+                jongFlag: _jong_flag,
+                sortById: _sort_flag,
+                searchText: textSearch.text,
+              ),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              var filtered = controller.items
-                  .where(
-                    (item) =>
-                        item.tb == "메모" &&
-                        item.wan == _wan_flag &&
-                        getDecodedContent(item)['jong'].toString() == _jong_flag,
-                  )
-                  .toList();
+                final filtered = snapshot.data!;
 
-              if (textSearch.text.isNotEmpty) {
-                filtered = filtered
-                    .where(
-                      (item) => getDecodedContent(item)['content1']
-                          .toString()
-                          .toLowerCase()
-                          .contains(textSearch.text.toLowerCase()),
-                    )
-                    .toList();
-              }
+                if (filtered.isEmpty) {
+                  return const Center(child: Text("데이터 없음"));
+                }
 
-              if (_sort_flag) {
-                filtered.sort((a, b) => b.id.compareTo(a.id));
-              } else {
-                filtered.sort((a, b) => getDecodedContent(a)['content1'].compareTo(getDecodedContent(b)['content1']));
-              }
+                return ListView.builder(
+                  controller: _controller,
+                  padding: const EdgeInsets.all(10),
+                  itemCount: filtered.length,
+                  itemBuilder: (_, index) {
+                    final item = filtered[index];
+                    final content = controller.decode(item); // ⭕ controller 캐시 사용
 
-              return ListView.builder(
-                controller: _controller,
-                padding: const EdgeInsets.all(10),
-                itemCount: filtered.length,
-                itemBuilder: (_, index) {
-                  final item = filtered[index];
-                  final content = getDecodedContent(item);
-                  return Card(
-                    elevation: 7,
-                    child: ListTile(
-                      dense: true,
-                      title: Transform.translate(
-                        offset: const Offset(0, 0),
-                        child: Text(
+                    return Card(
+                      elevation: 7,
+                      child: ListTile(
+                        dense: true,
+                        title: Text(
                           content['content1'],
                           maxLines: controller.setting_line_size.toInt(),
                           overflow: TextOverflow.fade,
                           style: TextStyle(
                             fontSize:
-                                controller.setting_font_size.toInt() + 0.0,
+                            controller.setting_font_size.toInt() + 0.0,
                           ),
                         ),
-                      ),
-                      trailing: Text(
-                        (index + 1).toString(),
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Colors.blueAccent,
+                        trailing: Text(
+                          (index + 1).toString(),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.blueAccent,
+                          ),
                         ),
-                      ),
-                      onTap: () async {
-                        controller.temp_data = <String, dynamic>{
-                          "id": item.id,
-                          "wan": item.wan,
-                          "jong": content['jong'].toString(),
-                          "content1": content['content1'],
-                          "content2": content['content2'],
-                        };
-                        await showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return const MmemoAdd();
-                          },
-                        );
-                      },
-                      onLongPress: () async {
-                        var index_move = index;
-                        while(true) {
-                          final s_data = <String, dynamic>{
-                            "view_font_size": controller.setting_view_font_size
-                                .toInt(),
-                            "content1": getDecodedContent(filtered[index_move])['content1'],
+                        onTap: () async {
+                          controller.temp_data = {
+                            "id": item.id,
+                            "wan": item.wan,
+                            "jong": content['jong'].toString(),
+                            "content1": content['content1'],
+                            "content2": content['content2'],
                           };
 
-                          var return_value = await Get.toNamed('/r/memo_view', arguments: s_data);
+                          await showDialog(
+                            context: context,
+                            builder: (_) => const MmemoAdd(),
+                          );
+                        },
+                        onLongPress: () async {
+                          var indexMove = index;
 
-                          if (return_value != null) {
-                            if (return_value < 0) {
-                              index_move++;
-                              if (index_move >= filtered.length) {
-                                break;
-                              }
-                            } else {
-                              index_move--;
-                              if (index_move < 0) {
-                                break;
-                              }
-                            }
-                          } else {
-                            break;
+                          while (true) {
+                            final sData = {
+                              "view_font_size":
+                              controller.setting_view_font_size.toInt(),
+                              "content1":
+                              controller.decode(filtered[indexMove])['content1'],
+                            };
+
+                            final ret =
+                            await Get.toNamed('/r/memo_view', arguments: sData);
+
+                            if (ret == null) break;
+
+                            indexMove += ret < 0 ? 1 : -1;
+                            if (indexMove < 0 ||
+                                indexMove >= filtered.length) break;
                           }
-                        }
-                      },
-                    ),
-                  );
-                },
-              );
-            }),
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -295,7 +273,9 @@ class _MmemoState extends State<Mmemo> {
               icon: const Icon(Icons.looks_one),
               color: _jong_flag == '1' ? Colors.blue : Colors.grey,
               onPressed: () {
-                _controller.jumpTo(0);
+                if (_controller.hasClients) {
+                  _controller.jumpTo(0);
+                }
                 setState(() {
                   _jong_flag = '1';
                 });
@@ -306,7 +286,9 @@ class _MmemoState extends State<Mmemo> {
               icon: const Icon(Icons.extension),
               color: _jong_flag == '2' ? Colors.blue : Colors.grey,
               onPressed: () {
-                _controller.jumpTo(0);
+                if (_controller.hasClients) {
+                  _controller.jumpTo(0);
+                }
                 setState(() {
                   _jong_flag = '2';
                 });
@@ -317,7 +299,9 @@ class _MmemoState extends State<Mmemo> {
               icon: const Icon(Icons.savings),
               color: _jong_flag == '3' ? Colors.blue : Colors.grey,
               onPressed: () {
-                _controller.jumpTo(0);
+                if (_controller.hasClients) {
+                  _controller.jumpTo(0);
+                }
                 setState(() {
                   _jong_flag = '3';
                 });
@@ -328,7 +312,9 @@ class _MmemoState extends State<Mmemo> {
               icon: const Icon(Icons.local_florist),
               color: _jong_flag == '4' ? Colors.blue : Colors.grey,
               onPressed: () {
-                _controller.jumpTo(0);
+                if (_controller.hasClients) {
+                  _controller.jumpTo(0);
+                }
                 setState(() {
                   _jong_flag = '4';
                 });
@@ -339,7 +325,9 @@ class _MmemoState extends State<Mmemo> {
               icon: const Icon(Icons.switch_access_shortcut),
               color: _jong_flag == '5' ? Colors.blue : Colors.grey,
               onPressed: () {
-                _controller.jumpTo(0);
+                if (_controller.hasClients) {
+                  _controller.jumpTo(0);
+                }
                 setState(() {
                   _jong_flag = '5';
                 });
@@ -351,7 +339,9 @@ class _MmemoState extends State<Mmemo> {
               icon: const Icon(Icons.diversity_1),
               color: _jong_flag == '6' ? Colors.blue : Colors.grey,
               onPressed: () {
-                _controller.jumpTo(0);
+                if (_controller.hasClients) {
+                  _controller.jumpTo(0);
+                }
                 setState(() {
                   _jong_flag = '6';
                 });

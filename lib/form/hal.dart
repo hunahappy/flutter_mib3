@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
 import 'cal.dart';
 import 'hal_add.dart';
@@ -99,89 +100,80 @@ class _MhalState extends State<Mhal> {
       body: Column(
         children: [
           Expanded(
-            child: Obx(() {
-              final cache = <dynamic, Map<String, dynamic>>{};
-              Map<String, dynamic> getDecodedContent(dynamic item) {
-                return cache.putIfAbsent(item, () => jsonDecode(item.content));
-              }
+            child: StreamBuilder<List<Mib3Data>>(
+              stream: controller.watchTodo(
+                wanFlag: _wan_flag,
+                sortByDate: _sort_flag,
+                dateLimit: _date_flag,
+              ),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              var filtered = controller.items
-                  .where((item) => item.tb == "할일" && item.wan == _wan_flag)
-                  .toList();
+                final list = snapshot.data!;
 
-              if (_date_flag != "") {
-                filtered = filtered
-                    .where((item) => getDecodedContent(item)['s_date'].toString().compareTo(_date_flag.substring(0,10)) <= 0)
-                    .toList();
-              }
+                if (list.isEmpty) {
+                  return const Center(child: Text('할일 없음'));
+                }
 
-              if (_sort_flag) {
-                filtered.sort(
-                      (a, b) => getDecodedContent(a)['s_date'].compareTo(getDecodedContent(b)['s_date']),
-                );
-              } else {
-                filtered.sort(
-                  (a, b) => getDecodedContent(a)['content1'].compareTo(getDecodedContent(b)['content1']),
-                );
-              }
+                return ListView.builder(
+                  controller: _controller,
+                  padding: const EdgeInsets.all(10),
+                  itemCount: list.length,
+                  itemBuilder: (_, index) {
+                    final item = list[index];
+                    final content = controller.decode(item);
 
-              return ListView.builder(
-                controller: _controller,
-                padding: const EdgeInsets.all(10),
-                itemCount: filtered.length,
-                itemBuilder: (_, index) {
-                  final item = filtered[index];
-                  final content = getDecodedContent(item);
-                  return Card(
-                    elevation: 7,
-                    child: ListTile(
-                      dense: true,
-                      title: Transform.translate(
-                        offset: const Offset(0, 0),
-                        child: Text(
-                          "  ${content['s_date'].toString()}(${get_date_yo(content['s_date'])})\n${content['content1']}",
+                    return Card(
+                      elevation: 7,
+                      child: ListTile(
+                        dense: true,
+                        title: Text(
+                          "  ${content['s_date']}(${get_date_yo(content['s_date'])})\n"
+                              "${content['content1']}",
                           maxLines: controller.setting_line_size,
                           overflow: TextOverflow.fade,
-                          style:
-                          TextStyle(fontSize: controller.setting_font_size + 0.0),
+                          style: TextStyle(
+                            fontSize: controller.setting_font_size + 0.0,
+                          ),
                         ),
-                      ),
-                      trailing: Text(
-                        "${get_date_term2(content['s_date'].toString()) * -1 + 1}일 남음",
-                        style: const TextStyle(
-                            fontSize: 10, color: Colors.blueAccent),
-                      ),
+                        trailing: Text(
+                          "${get_date_term2(content['s_date']) * -1 + 1}일 남음",
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.blueAccent,
+                          ),
+                        ),
+                        onTap: () async {
+                          controller.temp_data = {
+                            "id": item.id,
+                            "wan": item.wan,
+                            "s_date": content['s_date'],
+                            "content1": content['content1'],
+                            "content2": content['content2'],
+                          };
 
-                      onTap: () async {
-                        controller.temp_data = <String, dynamic>{
-                          "id": item.id,
-                          "wan": item.wan,
-                          "s_date": content['s_date'],
-                          "content1": content['content1'],
-                          "content2": content['content2'],
-                        };
-                        await showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return const MhalAdd();
-                          },
-                        );
-                      },
-                      onLongPress: () async {
-                        final s_data = <String, dynamic>{
-                          "view_font_size": controller.setting_view_font_size
-                              .toInt(),
-                          "content1": content['content1'],
-                        };
+                          await showDialog(
+                            context: context,
+                            builder: (_) => const MhalAdd(),
+                          );
+                        },
+                        onLongPress: () async {
+                          final sData = {
+                            "view_font_size":
+                            controller.setting_view_font_size.toInt(),
+                            "content1": content['content1'],
+                          };
 
-                        await Get.toNamed('/r/memo_view', arguments: s_data);
-                        setState(() {});
-                      },
-                    ),
-                  );
-                },
-              );
-            }),
+                          await Get.toNamed('/r/memo_view', arguments: sData);
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),

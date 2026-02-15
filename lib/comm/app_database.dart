@@ -18,15 +18,21 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 1;
 
+  Future<List<Mib3SubData>> getSubsByMaster(String masterId) {
+    return (select(mib3Sub)
+      ..where((t) => t.masterId.equals(masterId))
+      ..orderBy([
+            (t) => OrderingTerm.asc(t.sdate),
+      ]))
+        .get();
+  }
+
   Future<void> clearAll() async {
     await batch((b) {
       b.deleteAll(mib3);
       b.deleteAll(mib3Sub);
     });
   }
-
-  Future<List<Mib3Data>> getAll() => select(mib3).get();
-  Stream<List<Mib3Data>> watchAll() => select(mib3).watch();
 
   Future<void> insertRow(Mib3Companion row) {
     return into(mib3).insert(row, mode: InsertMode.insertOrReplace);
@@ -85,53 +91,6 @@ class AppDatabase extends _$AppDatabase {
       });
     },
   );
-
-
-// ====================
-// mib3_sub
-// ====================
-
-  // Future<List<Mib3SubData>> getSubsAll(String masterId) {
-  //   return (select(mib3Sub)..where((t) => t.masterId.equals(masterId))).get();
-  // }
-  //
-  // Stream<List<Mib3SubData>> watchSuball(String masterId) {
-  //   return (select(mib3Sub)..where((t) => t.masterId.equals(masterId))).watch();
-  // }
-
-  Future<List<Mib3SubData>> watchSubsAll() => select(mib3Sub).get();
-  Stream<List<Mib3SubData>> watchSubAll() => select(mib3Sub).watch();
-
-  // Stream<List<MibWithLastSubDate>> watchJinWithLastSubDate() {
-  //   return (select(mib3)
-  //     ..where((t) => t.tb.equals('진행')))
-  //       .watch()
-  //       .asyncMap((memos) async {
-  //     final list = <MibWithLastSubDate>[];
-  //
-  //     for (final memo in memos) {
-  //       final lastSub = await (select(mib3Sub)
-  //         ..where((t) => t.masterId.equals(memo.id))
-  //         ..orderBy([
-  //               (t) => OrderingTerm(
-  //             expression: t.sdate,
-  //             mode: OrderingMode.desc,
-  //           )
-  //         ])
-  //         ..limit(1))
-  //           .getSingleOrNull();
-  //
-  //       list.add(
-  //         MibWithLastSubDate(
-  //           memo: memo,               // mib3의 모든 컬럼
-  //           lastSubDate: lastSub?.sdate, // 마지막 sub 날짜
-  //         ),
-  //       );
-  //     }
-  //
-  //     return list;
-  //   });
-  // }
 
   Stream<List<MibWithLastSubDate>> watchJinWithLastSubDate() {
     return customSelect(

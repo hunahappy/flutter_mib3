@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mib3/form/progress_add.dart';
 
+import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
 import 'cal.dart';
 
@@ -84,94 +85,169 @@ class _MprogressState extends State<Mprogress> {
       body: Column(
         children: [
           Expanded(
-            child: Obx(() {
-              final cache = <dynamic, Map<String, dynamic>>{};
-              Map<String, dynamic> getDecodedContent(dynamic item) {
-                return cache.putIfAbsent(item, () => jsonDecode(item.content));
-              }
+            child: StreamBuilder<List<MibWithLastSubDate>>(
+              stream: controller.watchProgress(
+                wanFlag: _wan_flag,
+                sortByContent: _sort_flag,
+              ),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              var filtered = controller.items_jin
-                  .where((item) => item.memo.tb == "진행" && item.memo.wan == _wan_flag)
-                  .toList();
+                final list = snapshot.data!;
 
-              if (_sort_flag) {
-                filtered.sort(
-                      (a, b) => getDecodedContent(a.memo)['content1'].compareTo(getDecodedContent(b.memo)['content1']),
-                );
-              } else {
-                filtered.sort(
-                      (a, b) => getDecodedContent(a.memo)['content1'].compareTo(getDecodedContent(b.memo)['content1']),
-                );
-              }
+                if (list.isEmpty) {
+                  return const Center(child: Text('진행중 메모 없음'));
+                }
 
-              return ListView.builder(
-                controller: _controller,
-                padding: const EdgeInsets.all(10),
-                itemCount: filtered.length,
-                itemBuilder: (_, index) {
-                  final item = filtered[index];
-                  final content = getDecodedContent(item.memo);
-                  return Card(
-                    elevation: 7,
-                    clipBehavior: Clip.antiAlias, // 중요
-                    child: ListTile(
-                      dense: true,
-                      title: Transform.translate(
-                        offset: const Offset(0, 0),
-                        child: Text(content["content1"],
+                return ListView.builder(
+                  controller: _controller,
+                  padding: const EdgeInsets.all(10),
+                  itemCount: list.length,
+                  itemBuilder: (_, index) {
+                    final item = list[index];
+                    final content = controller.decode(item.memo);
+
+                    return Card(
+                      elevation: 7,
+                      clipBehavior: Clip.antiAlias,
+                      child: ListTile(
+                        dense: true,
+                        title: Text(
+                          content['content1'],
                           maxLines: controller.setting_line_size,
                           overflow: TextOverflow.fade,
-                          style:
-                          TextStyle(fontSize: controller.setting_font_size + 0.0),
+                          style: TextStyle(
+                            fontSize: controller.setting_font_size + 0.0,
+                          ),
                         ),
+                        trailing: Text(
+                          "${get_date_term2(item.lastSubDate == null ? '' : item.lastSubDate.toString())}일 지남",
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.blueAccent,
+                          ),
+                        ),
+                        onTap: () async {
+                          controller.temp_data = {
+                            "id": item.memo.id,
+                            "wan": item.memo.wan,
+                            "content1": content['content1'],
+                            "content2": content['content2'],
+                          };
+
+                          await showDialog(
+                            context: context,
+                            builder: (_) => const MprogressAdd(),
+                          );
+                        },
+                        onLongPress: () async {
+                          final dataSub = await controller.buildSubContent(controller.temp_data["id"].toString());
+
+                          final sData = {
+                            "view_font_size": controller.setting_view_font_size.toInt(),
+                            "content1": controller.temp_data['content1'] + "\n\n" + dataSub,
+                          };
+
+                          await Get.toNamed('/r/memo_view', arguments: sData);
+                        },
                       ),
-                      trailing: Text(
-                        "${get_date_term2(item.lastSubDate==null?"":item.lastSubDate.toString())}일 지남",
-                        style: const TextStyle(
-                            fontSize: 10, color: Colors.blueAccent),
-                      ),
-
-                      onTap: () async {
-                        controller.temp_data = <String, dynamic>{
-                          "id": item.memo.id,
-                          "wan": item.memo.wan,
-                          "content1": content['content1'],
-                          "content2": content['content2'],
-                        };
-                        await showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return const MprogressAdd();
-                          },
-                        );
-                      },
-                      onLongPress: () async {
-                        var filtered = controller.subs
-                            .where((it) => it.masterId.toString() == item.memo.id,).toList();
-
-                        filtered.sort((a, b) => a.sdate.compareTo(b.sdate));
-
-                        String data_sub = "";
-                        for (var element in filtered) {
-                          var row = getDecodedContent(element);
-                          data_sub = "$data_sub ${element.sdate}(${get_date_yo(element.sdate)})\n" + row["content1"] + "\n" + row["content2"]+ "\n\n";
-                        }
-
-                        final s_data = <String, dynamic>{
-                          "view_font_size": controller.setting_view_font_size
-                              .toInt(),
-                          "content1": content['content1']+"\n\n"+data_sub,
-                        };
-
-                        await Get.toNamed('/r/memo_view', arguments: s_data);
-                        setState(() {});
-                      },
-                    ),
-                  );
-                },
-              );
-            }),
+                    );
+                  },
+                );
+              },
+            ),
           ),
+          // Expanded(
+          //   child: Obx(() {
+          //     final cache = <dynamic, Map<String, dynamic>>{};
+          //     Map<String, dynamic> getDecodedContent(dynamic item) {
+          //       return cache.putIfAbsent(item, () => jsonDecode(item.content));
+          //     }
+          //
+          //     var filtered = controller.items_jin
+          //         .where((item) => item.memo.tb == "진행" && item.memo.wan == _wan_flag)
+          //         .toList();
+          //
+          //     if (_sort_flag) {
+          //       filtered.sort(
+          //             (a, b) => getDecodedContent(a.memo)['content1'].compareTo(getDecodedContent(b.memo)['content1']),
+          //       );
+          //     } else {
+          //       filtered.sort(
+          //             (a, b) => getDecodedContent(a.memo)['content1'].compareTo(getDecodedContent(b.memo)['content1']),
+          //       );
+          //     }
+          //
+          //     return ListView.builder(
+          //       controller: _controller,
+          //       padding: const EdgeInsets.all(10),
+          //       itemCount: filtered.length,
+          //       itemBuilder: (_, index) {
+          //         final item = filtered[index];
+          //         final content = getDecodedContent(item.memo);
+          //         return Card(
+          //           elevation: 7,
+          //           clipBehavior: Clip.antiAlias, // 중요
+          //           child: ListTile(
+          //             dense: true,
+          //             title: Transform.translate(
+          //               offset: const Offset(0, 0),
+          //               child: Text(content["content1"],
+          //                 maxLines: controller.setting_line_size,
+          //                 overflow: TextOverflow.fade,
+          //                 style:
+          //                 TextStyle(fontSize: controller.setting_font_size + 0.0),
+          //               ),
+          //             ),
+          //             trailing: Text(
+          //               "${get_date_term2(item.lastSubDate==null?"":item.lastSubDate.toString())}일 지남",
+          //               style: const TextStyle(
+          //                   fontSize: 10, color: Colors.blueAccent),
+          //             ),
+          //
+          //             onTap: () async {
+          //               controller.temp_data = <String, dynamic>{
+          //                 "id": item.memo.id,
+          //                 "wan": item.memo.wan,
+          //                 "content1": content['content1'],
+          //                 "content2": content['content2'],
+          //               };
+          //               await showDialog(
+          //                 context: context,
+          //                 builder: (BuildContext context) {
+          //                   return const MprogressAdd();
+          //                 },
+          //               );
+          //             },
+          //             onLongPress: () async {
+          //               var filtered = controller.subs
+          //                   .where((it) => it.masterId.toString() == item.memo.id,).toList();
+          //
+          //               filtered.sort((a, b) => a.sdate.compareTo(b.sdate));
+          //
+          //               String data_sub = "";
+          //               for (var element in filtered) {
+          //                 var row = getDecodedContent(element);
+          //                 data_sub = "$data_sub ${element.sdate}(${get_date_yo(element.sdate)})\n" + row["content1"] + "\n" + row["content2"]+ "\n\n";
+          //               }
+          //
+          //               final s_data = <String, dynamic>{
+          //                 "view_font_size": controller.setting_view_font_size
+          //                     .toInt(),
+          //                 "content1": content['content1']+"\n\n"+data_sub,
+          //               };
+          //
+          //               await Get.toNamed('/r/memo_view', arguments: s_data);
+          //               setState(() {});
+          //             },
+          //           ),
+          //         );
+          //       },
+          //     );
+          //   }),
+          // ),
         ],
       ),
       floatingActionButton: FloatingActionButton(

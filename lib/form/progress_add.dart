@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:mib3/form/progress_sub_add.dart';
 
+import '../comm/app_database.dart';
 import '../comm/mib3_controller.dart';
 
 class MprogressAdd extends StatefulWidget {
@@ -226,93 +227,67 @@ class _MprogressAddState extends State<MprogressAdd> {
                   SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height - 400,
-                    child: Obx(() {
-                      var filtered = controller.subs
-                          .where(
-                            (item) =>
-                                item.masterId.toString() ==
-                                controller.temp_data["id"].toString(),
-                          )
-                          .toList();
+                    child: FutureBuilder<List<Mib3SubData>>(
+                      future: controller.db.getSubsByMaster(controller.temp_data["id"].toString()),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
 
-                      filtered.sort((a, b) => b.sdate.compareTo(a.sdate));
+                        final filtered = snapshot.data!;
+                        filtered.sort((a, b) => b.sdate.compareTo(a.sdate));
 
-                      return ListView.builder(
-                        controller: _controller,
-                        padding: const EdgeInsets.all(10),
-                        itemCount: filtered.length,
-                        itemBuilder: (_, index) {
-                          final item = filtered[index];
-                          return Card(
-                            elevation: 7,
-                            child: ListTile(
-                              dense: true,
-                              title: Transform.translate(
-                                offset: const Offset(0, 0),
-                                child: Text(
-                                  jsonDecode(item.content)["content1"],
+                        return ListView.builder(
+                          controller: _controller,
+                          padding: const EdgeInsets.all(10),
+                          itemCount: filtered.length,
+                          itemBuilder: (_, index) {
+                            final item = filtered[index];
+                            final content = jsonDecode(item.content);
+
+                            return Card(
+                              elevation: 7,
+                              child: ListTile(
+                                dense: true,
+                                title: Text(
+                                  content["content1"],
                                   maxLines: controller.setting_line_size,
                                   overflow: TextOverflow.fade,
-                                  style: TextStyle(
-                                    fontSize:
-                                        controller.setting_font_size + 0.0,
-                                  ),
+                                  style: TextStyle(fontSize: controller.setting_font_size + 0.0),
                                 ),
-                              ),
-                              trailing: Text(
-                                index < filtered.length - 1
-                                    ? filtered[index].sdate.toString().length > 9
-                                          ? "${filtered[index].sdate.toString().substring(5, 10)} ${get_date_yo(filtered[index].sdate.toString())}\n${get_term_day(filtered[index].sdate, filtered[index + 1].sdate)}${"일 지남"}"
-                                          : ""
-                                    : filtered[index].sdate.toString().length > 9
-                                    ? "${filtered[index].sdate.toString().substring(5, 10)} ${get_date_yo(filtered[index].sdate.toString())}\n최초"
-                                    : "",
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.blueAccent,
+                                trailing: Text(
+                                  index < filtered.length - 1
+                                      ? "${filtered[index].sdate.substring(5, 10)} ${get_date_yo(filtered[index].sdate)}\n${get_term_day(filtered[index].sdate, filtered[index + 1].sdate)}일 지남"
+                                      : "${filtered[index].sdate.substring(5, 10)} ${get_date_yo(filtered[index].sdate)}\n최초",
+                                  style: const TextStyle(fontSize: 10, color: Colors.blueAccent),
                                 ),
+                                onTap: () async {
+                                  controller.sub_temp_data = {
+                                    "id": item.id,
+                                    "masterid": item.masterId,
+                                    "sdate": item.sdate,
+                                    "content1": content['content1'],
+                                    "content2": content['content2'],
+                                  };
+                                  await showDialog(
+                                    context: context,
+                                    builder: (_) => const MprogressSubAdd(),
+                                  );
+                                },
+                                onLongPress: () async {
+                                  final sData = {
+                                    "view_font_size": controller.setting_view_font_size.toInt(),
+                                    "content1": content['content1'],
+                                  };
+                                  await Get.toNamed('/r/memo_view', arguments: sData);
+                                },
                               ),
-                              onTap: () async {
-                                controller.sub_temp_data = <String, dynamic>{
-                                  "id": item.id,
-                                  "masterid": item.masterId,
-                                  "sdate": item.sdate,
-                                  "content1": jsonDecode(
-                                    item.content,
-                                  )['content1'],
-                                  "content2": jsonDecode(
-                                    item.content,
-                                  )['content2'],
-                                };
-                                await showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return const MprogressSubAdd();
-                                  },
-                                );
-                              },
-                              onLongPress: () async {
-                                final s_data = <String, dynamic>{
-                                  "view_font_size": controller
-                                      .setting_view_font_size
-                                      .toInt(),
-                                  "content1": jsonDecode(
-                                    item.content,
-                                  )['content1'],
-                                };
-
-                                await Get.toNamed(
-                                  '/r/memo_view',
-                                  arguments: s_data,
-                                );
-                                setState(() {});
-                              },
-                            ),
-                          );
-                        },
-                      );
-                    }),
-                  ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  )
                 ],
               ),
             ),
