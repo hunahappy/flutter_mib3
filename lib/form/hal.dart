@@ -100,7 +100,7 @@ class _MhalState extends State<Mhal> {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<List<Mib3Data>>(
+            child: StreamBuilder<List<Mib3Decoded>>(
               stream: controller.watchTodo(
                 wanFlag: _wan_flag,
                 sortByDate: _sort_flag,
@@ -122,8 +122,9 @@ class _MhalState extends State<Mhal> {
                   padding: const EdgeInsets.all(10),
                   itemCount: list.length,
                   itemBuilder: (_, index) {
-                    final item = list[index];
-                    final content = controller.decode(item);
+                    final decoded = list[index];
+                    final item = decoded.raw;        // 🔹 Mib3Data
+                    final content = decoded.content; // 🔹 Map<String, dynamic>
 
                     return Card(
                       elevation: 7,
@@ -166,7 +167,10 @@ class _MhalState extends State<Mhal> {
                             "content1": content['content1'],
                           };
 
-                          await Get.toNamed('/r/memo_view', arguments: sData);
+                          await Get.toNamed(
+                            '/r/memo_view',
+                            arguments: sData,
+                          );
                         },
                       ),
                     );

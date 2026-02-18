@@ -128,7 +128,7 @@ class _MilgiState extends State<Milgi> {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<List<Mib3Data>>(
+            child: StreamBuilder<List<Mib3Decoded>>(
               stream: controller.watchDiary(
                 wanFlag: _wan_flag,
                 sortByDateDesc: _sort_flag,
@@ -151,15 +151,15 @@ class _MilgiState extends State<Milgi> {
                   itemCount: filtered.length,
                   itemBuilder: (_, index) {
                     final item = filtered[index];
-                    final content = controller.decode(item);
+                    final c = item.content; // 👈 이미 decode + 캐시됨
 
                     return Card(
                       elevation: 7,
                       child: ListTile(
                         dense: true,
                         title: Text(
-                          "  ${content["s_date"]}(${get_date_yo(content["s_date"])})\n"
-                              "${content["content1"]}",
+                          "  ${c['s_date']}(${get_date_yo(c['s_date'])})\n"
+                              "${c['content1']}",
                           maxLines: controller.setting_line_size,
                           overflow: TextOverflow.fade,
                           style: TextStyle(
@@ -168,11 +168,11 @@ class _MilgiState extends State<Milgi> {
                         ),
                         onTap: () async {
                           controller.temp_data = {
-                            "id": item.id,
-                            "wan": item.wan,
-                            "s_date": content['s_date'],
-                            "content1": content['content1'],
-                            "content2": content['content2'],
+                            "id": item.raw.id,
+                            "wan": item.raw.wan,
+                            "s_date": c['s_date'],
+                            "content1": c['content1'],
+                            "content2": c['content2'],
                           };
 
                           await showDialog(

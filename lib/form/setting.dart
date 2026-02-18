@@ -158,6 +158,7 @@ class _MsettingState extends State<Msetting> {
                 ),
               ],
             ),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -166,7 +167,7 @@ class _MsettingState extends State<Msetting> {
 
   Widget _numField(TextEditingController c, String label) {
     return SizedBox(
-      width: 90,
+      width: 75,
       child: TextFormField(
         controller: c,
         keyboardType: TextInputType.number,

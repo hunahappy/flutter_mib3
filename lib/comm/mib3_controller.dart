@@ -46,6 +46,32 @@ ThemeMode _parseTheme(String v) {
   }
 }
 
+
+
+class Mib3Decoded {
+  final Mib3Data raw;
+  final Map<String, dynamic> content;
+
+  Mib3Decoded({
+    required this.raw,
+    required this.content,
+  });
+}
+
+
+class MibProgressDecoded {
+  final Mib3Data raw;
+  final Map<String, dynamic> content;
+  final String? lastSubDate;
+
+  MibProgressDecoded({
+    required this.raw,
+    required this.content,
+    required this.lastSubDate,
+  });
+}
+
+
 /// =====================
 /// Controller
 /// =====================
@@ -72,49 +98,66 @@ class Mib3Controller extends GetxController {
 
   Mib3Controller(this.db);
 
-  // 🔥 JSON decode 캐시 (build 아님, controller 수명)
-  final Map<String, Map<String, dynamic>> _jsonCache = {};
-  final Map<String, Map<String, dynamic>> _jsonCacheSub = {};
+  final Map<String, Map<String, dynamic>> _decodeCache = {};
 
-  Map<String, dynamic> decode(Mib3Data item) {
-    return _jsonCache.putIfAbsent(
-      item.id,
-          () => jsonDecode(item.content),
+  Map<String, dynamic> decode(Mib3Data e) {
+    final key = '${e.id}_${e.content.hashCode}';
+
+    return _decodeCache.putIfAbsent(
+      key,
+          () => jsonDecode(e.content) as Map<String, dynamic>,
     );
   }
 
-  Map<String, dynamic> decodeSub(Mib3SubData row) {
-    return _jsonCacheSub.putIfAbsent(
-      row.id,
-          () => jsonDecode(row.content),
-    );
-  }
-
-  Stream<List<Mib3Data>> watchMemo({
+  Stream<List<Mib3Decoded>> watchMemo({
     required String wanFlag,
     required String jongFlag,
     required bool sortById,
     required String searchText,
   }) {
-    final query = db.select(db.mib3) // ← 여기 db. 붙이기
+    final query = db.select(db.mib3)
       ..where((tbl) => tbl.tb.equals('메모') & tbl.wan.equals(wanFlag));
 
     return query.watch().map((rows) {
-      var filtered = rows.where((item) {
-        final decoded = jsonDecode(item.content);
-        if (decoded['jong'].toString() != jongFlag) return false;
-        if (searchText.isNotEmpty && !decoded['content1'].toString().toLowerCase().contains(searchText.toLowerCase())) return false;
-        return true;
-      }).toList();
+      // 1️⃣ 필터
+      final filtered = rows.where((item) {
+        final d = decode(item); // ✅ 공용 캐시 사용
 
-      filtered.sort((a, b) => sortById
-          ? b.id.compareTo(a.id)
-          : jsonDecode(a.content)['content1'].compareTo(jsonDecode(b.content)['content1']));
-      return filtered;
+        if (d['jong'].toString() != jongFlag) return false;
+
+        if (searchText.isNotEmpty &&
+            !d['content1']
+                .toString()
+                .toLowerCase()
+                .contains(searchText.toLowerCase())) {
+          return false;
+        }
+
+        return true;
+      });
+
+      // 2️⃣ DTO 변환
+      final result = filtered
+          .map(
+            (item) => Mib3Decoded(
+          raw: item,
+          content: decode(item), // ✅ 재사용
+        ),
+      )
+          .toList();
+
+      // 3️⃣ 정렬
+      result.sort((a, b) => sortById
+          ? b.raw.id.compareTo(a.raw.id)
+          : a.content['content1']
+          .toString()
+          .compareTo(b.content['content1'].toString()));
+
+      return result;
     });
   }
 
-  Stream<List<Mib3Data>> watchDiary({
+  Stream<List<Mib3Decoded>> watchDiary({
     required String wanFlag,
     required bool sortByDateDesc,
     String searchText = '',
@@ -123,80 +166,100 @@ class Mib3Controller extends GetxController {
       ..where((tbl) => tbl.tb.equals('일기') & tbl.wan.equals(wanFlag));
 
     return query.watch().map((rows) {
-      final cache = <String, Map<String, dynamic>>{};
+      // 1️⃣ 필터
+      final filtered = rows.where((item) {
+        final d = decode(item); // ✅ 공용 캐시
 
-      Map<String, dynamic> decode(Mib3Data item) {
-        return cache.putIfAbsent(item.id, () => jsonDecode(item.content));
-      }
+        if (searchText.isNotEmpty &&
+            !d['content1']
+                .toString()
+                .toLowerCase()
+                .contains(searchText.toLowerCase())) {
+          return false;
+        }
 
-      // 검색 필터
-      var list = rows;
-      if (searchText.isNotEmpty) {
-        final q = searchText.toLowerCase();
-        list = list.where((e) => decode(e)['content1'].toString().toLowerCase().contains(q)).toList();
-      }
+        return true;
+      });
 
-      // 정렬
-      if (sortByDateDesc) {
-        list.sort((a, b) => decode(b)['s_date'].compareTo(decode(a)['s_date']));
-      } else {
-        list.sort((a, b) => decode(a)['content1'].compareTo(decode(b)['content1']));
-      }
+      // 2️⃣ DTO 변환
+      final result = filtered
+          .map(
+            (item) => Mib3Decoded(
+          raw: item,
+          content: decode(item), // ✅ 재사용
+        ),
+      )
+          .toList();
 
-      return list;
+      // 3️⃣ 정렬
+      result.sort(
+        sortByDateDesc
+            ? (a, b) => b.content['s_date']
+            .toString()
+            .compareTo(a.content['s_date'].toString())
+            : (a, b) => a.content['content1']
+            .toString()
+            .compareTo(b.content['content1'].toString()),
+      );
+
+      return result;
     });
   }
 
-
-
-  Stream<List<Mib3Data>> watchTodo({
+  Stream<List<Mib3Decoded>> watchTodo({
     required String wanFlag,
     required bool sortByDate,
     String dateLimit = '',
   }) {
-    // DB 단계에서 tb와 wan 필터
     final query = db.select(db.mib3)
       ..where((tbl) => tbl.tb.equals('할일') & tbl.wan.equals(wanFlag));
 
     return query.watch().map((rows) {
-      final cache = <String, Map<String, dynamic>>{};
+      // 1️⃣ 필터
+      var filtered = rows.where((item) {
+        final d = decode(item); // 🔥 공용 캐시 사용
 
-      Map<String, dynamic> decode(Mib3Data item) {
-        return cache.putIfAbsent(item.id, () => jsonDecode(item.content));
-      }
+        if (dateLimit.isNotEmpty) {
+          final limit = dateLimit.substring(0, 10);
+          if (d['s_date'].toString().compareTo(limit) > 0) {
+            return false;
+          }
+        }
 
-      // dateLimit 필터
-      var list = rows;
-      if (dateLimit.isNotEmpty) {
-        final limit = dateLimit.substring(0, 10);
-        list = list.where(
-              (e) => decode(e)['s_date'].toString().compareTo(limit) <= 0,
-        ).toList();
-      }
+        return true;
+      });
 
-      // 정렬
-      if (sortByDate) {
-        list.sort((a, b) => decode(a)['s_date'].compareTo(decode(b)['s_date']));
-      } else {
-        list.sort((a, b) => decode(a)['content1'].compareTo(decode(b)['content1']));
-      }
+      // 2️⃣ DTO 변환
+      final result = filtered
+          .map((item) => Mib3Decoded(
+        raw: item,
+        content: decode(item),
+      ))
+          .toList();
 
-      return list;
+      // 3️⃣ 정렬
+      result.sort(
+        sortByDate
+            ? (a, b) =>
+            a.content['s_date'].compareTo(b.content['s_date'])
+            : (a, b) =>
+            a.content['content1']
+                .toString()
+                .compareTo(b.content['content1'].toString()),
+      );
+
+      return result;
     });
   }
 
 
-
-  Stream<List<MibWithLastSubDate>> watchProgress({
+  Stream<List<MibProgressDecoded>> watchProgress({
     required String wanFlag,
     required bool sortByContent,
   }) {
-    // DB 단계에서 필터: tb='진행' + wanFlag
     final query = db.customSelect(
       '''
-    SELECT
-      m.*,
-      MAX(s.sdate) AS last_sub_date
+    SELECT m.*, MAX(s.sdate) AS last_sub_date
     FROM mib3 m
     LEFT JOIN mib3_sub s ON s.master_id = m.id
     WHERE m.tb = '진행' AND m.wan = ?
@@ -207,24 +270,29 @@ class Mib3Controller extends GetxController {
     );
 
     return query.watch().map((rows) {
-      final list = rows.map((row) {
-        final lastSubDateStr = row.read<String?>('last_sub_date');
+      // ✅ Stream 1회 방출당 공용 캐시
+      final Map<String, Map<String, dynamic>> cache = {};
 
-        return MibWithLastSubDate(
-          memo: db.mib3.map(row.data),
-          lastSubDate: lastSubDateStr,
+      Map<String, dynamic> decode(Mib3Data m) {
+        return cache.putIfAbsent(m.id, () => jsonDecode(m.content));
+      }
+
+      // 1️⃣ DTO 변환
+      final list = rows.map((row) {
+        final raw = db.mib3.map(row.data);
+        return MibProgressDecoded(
+          raw: raw,
+          content: decode(raw),
+          lastSubDate: row.read<String?>('last_sub_date'),
         );
       }).toList();
 
-      // sortByContent 옵션
-      list.sort((a, b) {
-        final aContent = decode(a.memo)['content1'];
-        final bContent = decode(b.memo)['content1'];
-
-        return sortByContent
-            ? aContent.compareTo(bContent)
-            : b.memo.id.compareTo(a.memo.id);
-      });
+      // 2️⃣ 정렬
+      list.sort((a, b) => sortByContent
+          ? a.content['content1']
+          .toString()
+          .compareTo(b.content['content1'].toString())
+          : b.raw.id.compareTo(a.raw.id));
 
       return list;
     });
@@ -234,10 +302,20 @@ class Mib3Controller extends GetxController {
   Future<String> buildSubContent(String memoId) async {
     final list = await db.getSubsByMaster(memoId);
 
+    // 🔥 함수 호출 단위 지역 캐시
+    final Map<String, Map<String, dynamic>> cache = {};
+
+    Map<String, dynamic> decode(Mib3SubData row) {
+      return cache.putIfAbsent(
+        row.id,
+            () => jsonDecode(row.content),
+      );
+    }
+
     final buffer = StringBuffer();
 
     for (final s in list) {
-      final row = decodeSub(s);
+      final row = decode(s);
 
       buffer.writeln(
         "${s.sdate}(${get_date_yo(s.sdate)})",
@@ -278,11 +356,6 @@ class Mib3Controller extends GetxController {
     // 1️⃣ 로컬 DB 전체 삭제
     await db.clearAll();
     // ⬆️ AppDatabase에 clearAll() 함수 필요 (아래 참고)
-
-
-    _jsonCache.clear();
-    _jsonCacheSub.clear();
-
 
     temp_data = <String, dynamic>{'id': 'new'};
     sub_temp_data = <String, dynamic>{'id': 'new'};

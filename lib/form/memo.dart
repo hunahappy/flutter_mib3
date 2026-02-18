@@ -153,7 +153,10 @@ class _MmemoState extends State<Mmemo> {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<List<Mib3Data>>(
+            child: StreamBuilder<List<Mib3Decoded>>(
+              key: ValueKey(
+                '${_wan_flag}_${_jong_flag}_${_sort_flag}_${textSearch.text}',
+              ), // ⭐ 이 한 줄이 핵심
               stream: controller.watchMemo(
                 wanFlag: _wan_flag,
                 jongFlag: _jong_flag,
@@ -177,7 +180,7 @@ class _MmemoState extends State<Mmemo> {
                   itemCount: filtered.length,
                   itemBuilder: (_, index) {
                     final item = filtered[index];
-                    final content = controller.decode(item); // ⭕ controller 캐시 사용
+                    final content = item.content; // ✅ 이미 decode됨
 
                     return Card(
                       elevation: 7,
@@ -201,8 +204,8 @@ class _MmemoState extends State<Mmemo> {
                         ),
                         onTap: () async {
                           controller.temp_data = {
-                            "id": item.id,
-                            "wan": item.wan,
+                            "id": item.raw.id,
+                            "wan": item.raw.wan,
                             "jong": content['jong'].toString(),
                             "content1": content['content1'],
                             "content2": content['content2'],
@@ -217,15 +220,19 @@ class _MmemoState extends State<Mmemo> {
                           var indexMove = index;
 
                           while (true) {
+                            final moveItem = filtered[indexMove];
+                            final moveContent = moveItem.content;
+
                             final sData = {
                               "view_font_size":
                               controller.setting_view_font_size.toInt(),
-                              "content1":
-                              controller.decode(filtered[indexMove])['content1'],
+                              "content1": moveContent['content1'],
                             };
 
-                            final ret =
-                            await Get.toNamed('/r/memo_view', arguments: sData);
+                            final ret = await Get.toNamed(
+                              '/r/memo_view',
+                              arguments: sData,
+                            );
 
                             if (ret == null) break;
 
