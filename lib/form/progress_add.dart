@@ -227,8 +227,11 @@ class _MprogressAddState extends State<MprogressAdd> {
                   SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height - 400,
-                    child: FutureBuilder<List<Mib3SubData>>(
-                      future: controller.db.getSubsByMaster(controller.temp_data["id"].toString()),
+                    child: StreamBuilder<List<Mib3SubData>>(
+                      stream: (controller.db.select(controller.db.mib3Sub)
+                        ..where((tbl) =>
+                            tbl.masterId.equals(controller.temp_data["id"].toString())))
+                          .watch(),
                       builder: (context, snapshot) {
                         if (!snapshot.hasData) {
                           return const Center(child: CircularProgressIndicator());
@@ -253,12 +256,15 @@ class _MprogressAddState extends State<MprogressAdd> {
                                   content["content1"],
                                   maxLines: controller.setting_line_size,
                                   overflow: TextOverflow.fade,
-                                  style: TextStyle(fontSize: controller.setting_font_size + 0.0),
+                                  style: TextStyle(
+                                    fontSize: controller.setting_font_size.toDouble(),
+                                  ),
                                 ),
                                 trailing: Text(
                                   index < filtered.length - 1
-                                      ? "${filtered[index].sdate.substring(5, 10)} ${get_date_yo(filtered[index].sdate)}\n${get_term_day(filtered[index].sdate, filtered[index + 1].sdate)}일 지남"
-                                      : "${filtered[index].sdate.substring(5, 10)} ${get_date_yo(filtered[index].sdate)}\n최초",
+                                      ? "${item.sdate.substring(5, 10)} ${get_date_yo(item.sdate)}\n"
+                                      "${get_term_day(item.sdate, filtered[index + 1].sdate)}일 지남"
+                                      : "${item.sdate.substring(5, 10)} ${get_date_yo(item.sdate)}\n최초",
                                   style: const TextStyle(fontSize: 10, color: Colors.blueAccent),
                                 ),
                                 onTap: () async {
@@ -274,20 +280,13 @@ class _MprogressAddState extends State<MprogressAdd> {
                                     builder: (_) => const MprogressSubAdd(),
                                   );
                                 },
-                                onLongPress: () async {
-                                  final sData = {
-                                    "view_font_size": controller.setting_view_font_size.toInt(),
-                                    "content1": content['content1'],
-                                  };
-                                  await Get.toNamed('/r/memo_view', arguments: sData);
-                                },
                               ),
                             );
                           },
                         );
                       },
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
