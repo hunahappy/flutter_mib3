@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -15,16 +16,17 @@ class MmemoView extends StatefulWidget {
 class _MmemoViewState extends State<MmemoView> {
   late final Map<String, dynamic> pData;
   final FlutterTts tts = FlutterTts();
-  bool isLooping = false;
+
+  bool isSpeaking = false;
 
   @override
   void initState() {
     super.initState();
     pData = Map<String, dynamic>.from(Get.arguments);
-    initTts(pData["content1"]);
+    initTts();
   }
 
-  Future<void> initTts(String text) async {
+  Future<void> initTts() async {
     await tts.setLanguage("ko-KR");
     await tts.setSpeechRate(0.45);
     await tts.setPitch(1.05);
@@ -32,14 +34,14 @@ class _MmemoViewState extends State<MmemoView> {
 
     if (Platform.isMacOS) {
       final voices = await tts.getVoices;
-      final koVoice = voices.firstWhere(
+      final koVoice = voices.cast<Map>().firstWhere(
             (v) =>
         v['locale'] == 'ko-KR' &&
             v['name'].toString().toLowerCase().contains('yuna'),
-        orElse: () => null,
+        orElse: () => {},
       );
 
-      if (koVoice != null) {
+      if (koVoice.isNotEmpty) {
         await tts.setVoice({
           "name": koVoice['name'],
           "locale": koVoice['locale'],
@@ -50,23 +52,47 @@ class _MmemoViewState extends State<MmemoView> {
     if (Platform.isAndroid) {
       await tts.setEngine("com.google.android.tts");
     }
+  }
 
-    // 🔁 반복 재생
-    tts.setCompletionHandler(() {
-      if (isLooping) {
-        tts.speak(text);
-      }
-    });
+  /// 🗣 사람처럼 말하기
+  Future<void> speakLikeHuman(String text) async {
+    isSpeaking = true;
+
+    final lines = text.split('\n');
+
+    for (final raw in lines) {
+      if (!isSpeaking) break;
+
+      final line = raw.trim();
+      if (line.isEmpty) continue;
+
+      final completer = Completer<void>();
+
+      tts.setCompletionHandler(() {
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      });
+
+      await tts.speak(line);
+      await completer.future;
+
+      // 문장 길이에 따른 사람 호흡
+      final pause = 200 + line.length * 25;
+      await Future.delayed(
+        Duration(milliseconds: pause.clamp(300, 1400)),
+      );
+    }
   }
 
   Future<void> startTts(String text) async {
-    isLooping = true;
-    await tts.stop();
-    await tts.speak(text);
+    await stopTts(); // 중복 방지
+    isSpeaking = true;
+    speakLikeHuman(text);
   }
 
   Future<void> stopTts() async {
-    isLooping = false;
+    isSpeaking = false;
     await tts.stop();
   }
 
