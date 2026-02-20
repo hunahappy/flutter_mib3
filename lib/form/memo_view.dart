@@ -18,6 +18,10 @@ class _MmemoViewState extends State<MmemoView> {
   final FlutterTts tts = FlutterTts();
 
   bool isSpeaking = false;
+  bool isLooping = false;
+
+  /// 🔁 반복 버튼에서만 사용하는 문단 반복 횟수
+  int paragraphRepeatCount = 3;
 
   @override
   void initState() {
@@ -54,14 +58,14 @@ class _MmemoViewState extends State<MmemoView> {
     }
   }
 
-  /// 🗣 사람처럼 말하기
-  Future<void> speakLikeHuman(String text) async {
-    isSpeaking = true;
-
-    final lines = text.split('\n');
+  // ==========================================================
+  // 🗣 사람처럼 말하기 (줄 단위 + 호흡)
+  // ==========================================================
+  Future<void> speakLikeHuman(String paragraph) async {
+    final lines = paragraph.split('\n');
 
     for (final raw in lines) {
-      if (!isSpeaking) break;
+      if (!isSpeaking) return;
 
       final line = raw.trim();
       if (line.isEmpty) continue;
@@ -77,7 +81,7 @@ class _MmemoViewState extends State<MmemoView> {
       await tts.speak(line);
       await completer.future;
 
-      // 문장 길이에 따른 사람 호흡
+      // 문장 길이에 따른 자연스러운 쉬기
       final pause = 200 + line.length * 25;
       await Future.delayed(
         Duration(milliseconds: pause.clamp(300, 1400)),
@@ -85,14 +89,67 @@ class _MmemoViewState extends State<MmemoView> {
     }
   }
 
-  Future<void> startTts(String text) async {
-    await stopTts(); // 중복 방지
+  /// ▶️ 한 번만 재생 (❌ 문단 반복 없음)
+  Future<void> playOnce(String text) async {
+    await stopTts();
     isSpeaking = true;
-    speakLikeHuman(text);
+    isLooping = false;
+
+    final paragraphs = _splitParagraphs(text);
+
+    for (final paragraph in paragraphs) {
+      if (!isSpeaking) break;
+
+      await speakLikeHuman(paragraph);
+
+      // 문단 사이 휴식
+      await Future.delayed(const Duration(milliseconds: 1000));
+    }
+
+    isSpeaking = false;
   }
 
+  /// 🔁 반복 재생 (⭕ 문단별 반복)
+  Future<void> playLoop(String text) async {
+    await stopTts();
+    isSpeaking = true;
+    isLooping = true;
+
+    final paragraphs = _splitParagraphs(text);
+
+    while (isSpeaking && isLooping) {
+      for (final paragraph in paragraphs) {
+        if (!isSpeaking) return;
+
+        for (int i = 0; i < paragraphRepeatCount; i++) {
+          if (!isSpeaking) return;
+
+          await speakLikeHuman(paragraph);
+
+          if (i < paragraphRepeatCount - 1) {
+            await Future.delayed(const Duration(milliseconds: 800));
+          }
+        }
+
+        await Future.delayed(const Duration(milliseconds: 1200));
+      }
+
+      await Future.delayed(const Duration(milliseconds: 1500));
+    }
+  }
+
+  List<String> _splitParagraphs(String text) {
+    return text
+        .split(RegExp(r'\n\s*\n'))
+        .map((p) => p.trim())
+        .where((p) => p.isNotEmpty)
+        .toList();
+  }
+
+  /// ⏹ 정지
   Future<void> stopTts() async {
     isSpeaking = false;
+    isLooping = false;
     await tts.stop();
   }
 
@@ -102,22 +159,29 @@ class _MmemoViewState extends State<MmemoView> {
     super.dispose();
   }
 
+  // ==========================================================
+  // 🖥 UI (텍스트 화면 꽉 차게)
+  // ==========================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "view",
-          style: TextStyle(fontSize: 17),
-        ),
+        title: const Text("view", style: TextStyle(fontSize: 17)),
         toolbarHeight: 37,
         actions: [
           IconButton(
             icon: const Icon(Icons.play_arrow),
-            onPressed: () => startTts(pData["content1"]),
+            tooltip: "한 번 재생",
+            onPressed: () => playOnce(pData["content1"]),
+          ),
+          IconButton(
+            icon: const Icon(Icons.repeat),
+            tooltip: "반복 재생",
+            onPressed: () => playLoop(pData["content1"]),
           ),
           IconButton(
             icon: const Icon(Icons.stop),
+            tooltip: "정지",
             onPressed: stopTts,
           ),
           IconButton(
@@ -135,31 +199,21 @@ class _MmemoViewState extends State<MmemoView> {
           stopTts();
           Get.back(result: details.velocity.pixelsPerSecond.dx);
         },
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Card(
-            elevation: 7,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: SingleChildScrollView(
-                      child: Text(
-                        pData["content1"],
-                        style: TextStyle(
-                          fontSize:
-                          (pData["view_font_size"] as int).toDouble(),
-                        ),
-                      ),
-                    ),
-                  ),
+        child: SafeArea(
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            padding: const EdgeInsets.all(12),
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Text(
+                pData["content1"],
+                style: TextStyle(
+                  fontSize:
+                  (pData["view_font_size"] as int).toDouble(),
+                  height: 1.6,
                 ),
-              ],
+              ),
             ),
           ),
         ),
