@@ -200,17 +200,14 @@ class _MmemoViewState extends State<MmemoView> {
           Get.back(result: details.velocity.pixelsPerSecond.dx);
         },
         child: SafeArea(
-          child: Container(
-            width: double.infinity,
-            height: double.infinity,
-            padding: const EdgeInsets.all(12),
+          child: SizedBox.expand( // ⭐ 화면 전체 강제
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.all(12), // ← 텍스트 여백만
               child: Text(
                 pData["content1"],
                 style: TextStyle(
-                  fontSize:
-                  (pData["view_font_size"] as int).toDouble(),
+                  fontSize: (pData["view_font_size"] as int).toDouble(),
                   height: 1.6,
                 ),
               ),
