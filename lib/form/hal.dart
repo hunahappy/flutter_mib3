@@ -140,7 +140,7 @@ class _MhalState extends State<Mhal> {
                           ),
                         ),
                         trailing: Text(
-                          "${get_date_term2(content['s_date']) * -1 + 1}일 남음",
+                          "${get_date_term2(content['s_date']) * -1}일 남음",
                           style: const TextStyle(
                             fontSize: 10,
                             color: Colors.blueAccent,

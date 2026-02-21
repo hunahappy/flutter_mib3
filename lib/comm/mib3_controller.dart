@@ -656,7 +656,14 @@ String get_date_yo(String pDate) {
 
 int get_date_term2(String pDate) {
   if (pDate.length < 10) return 0;
-  return DateTime.parse(pDate).difference(DateTime.now()).inDays * -1;
+
+  final todayStr =
+  DateTime.now().toIso8601String().substring(0, 10);
+
+  final today = DateTime.parse(todayStr);
+  final target = DateTime.parse(pDate.substring(0, 10));
+
+  return target.difference(today).inDays*-1;
 }
 
 int get_term_day(String date_1, String date_2) {
